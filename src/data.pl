@@ -98,7 +98,7 @@ vnfXUser(cloudStreamingVF, l, (10001, inf), 60).
 /* INTENT MODEL (by user) */
 
 % intent(Stakeholder, IntentID, NUsers, TargetId).
-intent(homeBankingOpp, hbIntent, 1500, homeBankingService).
+% intent(homeBankingOpp, hbIntent, 1500, homeBankingService).
 
 
 % Changing property

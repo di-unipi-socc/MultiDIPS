@@ -2,14 +2,17 @@
 0. clean up and extend code with triples 
     - energy model (e.g. based on RAM, CPU)
     - hw usage
-1. motivating scenario: to explain the problem and the considered features, and to "tell our story"
-2. extensive simulation (to be run on Unipi GreenCloud DC): that allows simulating and assessing different placement strategies in multiple realistic scenarios and averaging KPIs (e.g. exec times, profit, emissions, energy consumption, etc.)
-    a. generate 20 random infrastructure with realistic data
-    b. try to place [1, 5, 10] intents onto each of the random infrastructures with:
-        - heuristic strategies
-        - optimal strategy
-    c. try to place onto [32, 54, 128, 256, 512, 1024] onto each of the random infrastructures with heuristics only
-3. MILP vs Prolog
+    - add IntentId in IntentFulfillment?
+1. think about 1-2 smart heuristics?
+    - e.g. findall((AttributeNode, Node), ..., Nodes), sortByAttributed(Nodes, SortedNodes),
+        ... 
+2. motivating scenario: to explain the problem and the considered features, and to "tell our story"
+3. extensive simulation (to be run on Unipi GreenCloud DC): that allows simulating and assessing different placement strategies in multiple realistic scenarios and averaging KPIs (e.g. exec times, profit, emissions, energy consumption, etc.)
+    a. generate 20 random infrastructure with realistic data for [8, 16, 32, 64, 128, 256, 512] nodes
+    b. try to place [10, 50, 100] intents onto all infras, setting a cap of 10 minutes, finding optimal vs heuristics
+3'. MILP (14/06)
+3''. MILP vs Prolog
+3'''. Proposta TDR 
 */
 
 subList(P, From, To, P) :- var(From), var(To).

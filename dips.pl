@@ -8,11 +8,15 @@
 go(Problem, BestSol, PBest) :-
     solution(Problem, BestSol), profit(BestSol, PBest),
     \+ (solution(Problem, Sol), dif(BestSol, Sol), profit(Sol,P), P > PBest).
+
+IDEE: 
+- globali -> anche resource usage medio?
+- keep intent id in the placement?
 */
 
 optimumDips(Output) :-
     statistics(runtime,[Start|_]), % CPU time, maybe?
-    findall(intent(StakeHolder, IntentID, NUsers, TargetId), intent(StakeHolder, IntentID, NUsers, TargetId), IntentList1),
+    findall(intent(StakeHolder, IntentID, NUsers, TargetId), intent(StakeHolder, IntentID, NUsers, TargetId), IntentList),
     findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobalProperties),
     findall(P, validPlacement(IntentList, GlobalProperties, P), Sols),
     sort(2, @>=, Sols, [(L, PR, C, E, P, ABW, U)|_]),
@@ -24,26 +28,25 @@ optimumDips(Output) :-
     Output = (L, NewPR, NewC, NewE, P, ABW, U), !,
     statistics(runtime,[Stop|_]),
     Runtime is (Stop - Start)/1000,
-    write('Tempo di esecuzione: '), write(Runtime), nl, nl.
+    write('Execution time: '), write(Runtime), nl, nl.
 
 
 validPlacement(IntentList, GlobalProperties, P) :-
-    validPlacement2(IntentList, GlobalProperties, [], [], (0, 0, 0, 0, [], [], []), P).
+    placement(IntentList, GlobalProperties, [], [], (0, 0, 0, 0, [], [], []), P).
 
-validPlacement2([intent(StakeHolder, IID, NUsers, _)|Is], GlobalProperties, Permutation, AllocatedBW, (OldL, OldPR, OldC, OldE, OldP, OldABW, OldU), Result) :-
+placement([intent(StakeHolder, IID, NUsers, _)|Is], GlobalProperties, Permutation, AllocatedBW, (OldL, OldPR, OldC, OldE, OldP, OldABW, OldU), Result) :-
     dips(StakeHolder, IID, NUsers, NewPlacements, Permutation, AllocatedBW), 
     member((L, PR, C, E, P, ABW, U), NewPlacements),
     checkGlobalProperties(OldC, OldE, C, E, GlobalProperties),
     mergePlacements((OldL, OldPR, OldC, OldE, OldP, OldABW, OldU), (L, PR, C, E, P, ABW, U), (NewL, NewPR, NewC, NewE, NewP, NewABW, NewU)),
-    validPlacement2(Is, GlobalProperties, [P|Permutation], NewABW, (NewL, NewPR, NewC, NewE, NewP, NewABW, NewU), Result).
-validPlacement2([], _, _, _, Result, Result).
+    placement(Is, GlobalProperties, [P|Permutation], NewABW, (NewL, NewPR, NewC, NewE, NewP, NewABW, NewU), Result).
+placement([], _, _, _, Result, Result).
 
 
-mergePlacements((OldL, OldPR, OldC, OldE, OldP, OldABW, OldU), (L, PR, C, E, P, ABW, U), (NewL, NewPR, NewC, NewE, [P|OldP], [ABW|OldABW], [U|OldU])) :-
-    NewL is OldL + L,
-    NewPR is OldPR + PR,
-    NewC is OldC + C,
-    NewE is OldE + E.
+mergePlacements(OldInfo, Info, NewInfo) :-
+    OldInfo=(OldL, OldPR, OldC, OldE, OldP, OldABW, OldU), Info=(L, PR, C, E, P, ABW, U),
+    NewL is OldL + L, NewPR is OldPR + PR, NewC is OldC + C, NewE is OldE + E,
+    NewInfo=(NewL, NewPR, NewC, NewE, [P|OldP], [ABW|OldABW], [U|OldU]).
 
 
 findUnfulfilledIntent([intent(_, IID, _, _)|Is], [[]|Ps]) :- write('Impossibile rispettare intento: '), write(IID), nl, nl, findUnfulfilledIntent(Is, Ps).
@@ -196,8 +199,9 @@ hwOK(N, HWReqs, HWCaps, OldPlacements, Placement, HWUsage) :- % hw resources are
 
 
 calculateAllocatedBW(_, M, _, NewABW, NewABW) :- var(M).
-calculateAllocatedBW(N, M, BWValue, TmpAllocBW, [(N, M, BWValue)|TmpAllocBW]) :- nonvar(M). 
-    
+calculateAllocatedBW(N, M, BWValue, TmpAllocBW, [(N, M, BWValue)|TmpAllocBW]) :- dif(N,M), nonvar(M). 
+calculateAllocatedBW(N, N, _, T, T) :- nonvar(N). 
+
 
 calculateFootprintHW(N, HWUsage, HWReqs, HWEnergy, HWCarbon):-
     node(N, _, HW), totHW(N, TotHW),

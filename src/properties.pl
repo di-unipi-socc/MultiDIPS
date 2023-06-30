@@ -26,10 +26,12 @@ checkProperty(IntentID, bandwidth, From, To, Placement, OldAllocatedBW, OldUP, O
 
 % GLOBAL PROPERTIES
 
-checkGlobalProperties(OldC, OldE, C, E, [(footprint, Cap)|T]) :-
-    OldC + C =< Cap,
-    checkGlobalProperties(OldC, OldE, C, E, T).
-checkGlobalProperties(OldC, OldE, C, E, [(energy, Cap)|T]) :-
+checkGlobalProperties(PsInfo, PInfo, [(footprint, Cap)|T]) :-
+    PsInfo = (_, _, OldC, _, _, _, _), Info = (_, _, C, _, _, _, _),
+    OldC + C =< Cap, 
+    checkGlobalProperties(PsInfo, PInfo, T).
+checkGlobalProperties(PsInfo, PInfo, [(energy, Cap)|T]) :-
+    PsInfo = (_, _, _, OldE, _, _, _), Info = (_, _, _, E, _, _, _),
     OldE + E =< Cap,
-    checkGlobalProperties(OldC, OldE, C, E, T).
-checkGlobalProperties(_, _, _, _, []).
+    checkGlobalProperties(PsInfo, PInfo, T).
+checkGlobalProperties(_, _, []).
