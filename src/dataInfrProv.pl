@@ -41,64 +41,70 @@ kWhPerMB(0.00008).
 averageGCI(0.475).
 
 
-% price(Type, Price (€/h for unit)).  (users pricing)
-price(edge, 0.065).
-price(cloud, 0.050).
+% price(Type, (RamPrice, vCPUPrice, StoragePrice) ).  (€/h for unit, users pricing)
+price(edge, (0.065, 0.065, 0.065)).
+price(cloud, (0.050, 0.050, 0,050)).
 
 
-% node(Id, Type, HWCaps).
+% node(Id, Type, (RamCap, vCPUCap, StorageCap) ).       1 unit = 4 GB RAM / 2 vCPU / 200 GB Storage	
     % pue(Id, Value).
     % energyProfile(Id, Load (from 0 to 1), Energy (Kw/h) ).
     % energySourceMix(Id, Sources).
     % cost(Id, Cost(€/h for unit) ).
     % energyCost(Id, Cost(€/Kwh) ).
 
-node(gateway, edge, 10).
-    totHW(gateway, 15).
+node(gateway, edge, (4,3,3)).
+    totHW(gateway, (6,4,4)).
     pue(gateway, 1.10).
-    energyProfile(gateway, L, E) :- E is 0.020 + 0.080 * L.
+    ramEnergyProfile(gateway, L, E) :- E is 0.002 + 0.004 * L.
+    cpuEnergyProfile(gateway, L, E) :- E is 0.020 + 0.060 * L.
+    storageEnergyProfile(gateway, L, E) :- E is 0.001 + 0.006 * L.
     energySourceMix(gateway, [(0.3,coal), (0.3,solar), (0.4,gas)]).
-    cost(gateway, 0.03).
     energyCost(gateway, 0.22).
 
-node(edge1, edge, 15).
-    totHW(edge1, 20).
+node(edge1, edge, (8,4,3)).
+    totHW(edge1, (10,5,5)).
     pue(edge1, 1.15).
-    energyProfile(edge1, L, E) :- E is 0.040 + 0.180 * L.
+    ramEnergyProfile(gateway, L, E) :- E is 0.003 + 0.009 * L.
+    cpuEnergyProfile(gateway, L, E) :- E is 0.020 + 0.090 * L.
+    storageEnergyProfile(gateway, L, E) :- E is 0.001 + 0.008 * L.
     energySourceMix(edge1, [(0.2,coal), (0.2,onshorewind), (0.6,solar)]).
-    cost(edge1, 0.05).
     energyCost(edge1, 0.311).
 
-node(edge2, edge, 16).
-    totHW(edge2, 19).
+node(edge2, edge, (8,7,1)).
+    totHW(edge2, (8,7,1)).
     pue(edge2, 1.12).
-    energyProfile(edge2, L, E) :- E is 0.035 + 0.190 * L.
+    ramEnergyProfile(gateway, L, E) :- E is 0.003 + 0.008 * L.
+    cpuEnergyProfile(gateway, L, E) :- E is 0.030 + 0.120 * L.
+    storageEnergyProfile(gateway, L, E) :- E is 0.001 + 0.006 * L.
     energySourceMix(edge2, [(0.1,gas), (0.8,coal), (0.1,offshorewind)]).
-    cost(edge2, 0).
     energyCost(edge2, 0.129).
 
-node(edge3, edge, 14).
-    totHW(edge3, 18).
+node(edge3, edge, (6,5,4)).
+    totHW(edge3, (7,6,6)).
     pue(edge3, 1.14).
-    energyProfile(edge3, L, E) :- E is 0.040 + 0.180 * L.
+    ramEnergyProfile(gateway, L, E) :- E is 0.002 + 0.009 * L.
+    cpuEnergyProfile(gateway, L, E) :- E is 0.020 + 0.115 * L.
+    storageEnergyProfile(gateway, L, E) :- E is 0.001 + 0.006 * L.
     energySourceMix(edge3, [(0.4,gas), (0.4,coal), (0.2,solar)]).
-    cost(edge3, 0).
     energyCost(edge3, 0.252).
 
-node(cloud1, cloud, 161).
-    totHW(cloud1, 190).
-    pue(cloud1, 1.30).
-    energyProfile(cloud1, L, E) :- E is 0.08 + 0.530 * L.
+node(cloud1, cloud, (96,48,45)).
+    totHW(cloud1, (100,50,50)).
+    pue(cloud1, 1.25).
+    ramEnergyProfile(gateway, L, E) :- E is 0.030 + 0.130 * L.
+    cpuEnergyProfile(gateway, L, E) :- E is 0.050 + 0.410 * L.
+    storageEnergyProfile(gateway, L, E) :- E is 0.010 + 0.100 * L.
     energySourceMix(cloud1, [(0.5,solar), (0.1,gas), (0.4,coal)]).
-    cost(cloud1, 0).
     energyCost(cloud1, 0.153).
 
-node(cloud2, cloud, 158).
-    totHW(cloud2, 200).
+node(cloud2, cloud, (94,44,42)).
+    totHW(cloud2, (100,50,50)).
     pue(cloud2, 1.40).
-    energyProfile(cloud2, L, E) :- E is 0.03 + 0.560 * L.
+    ramEnergyProfile(gateway, L, E) :- E is 0.030 + 0.130 * L.
+    cpuEnergyProfile(gateway, L, E) :- E is 0.050 + 0.410 * L.
+    storageEnergyProfile(gateway, L, E) :- E is 0.010 + 0.100 * L.
     energySourceMix(cloud2, [(0.1,solar), (0.9,coal)]).
-    cost(cloud2, 0).
     energyCost(cloud2, 0.311).
 
 /*

@@ -22,7 +22,7 @@ propertyExpectation(gsIntent, logging, cloud, cloudGamingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, _, edgeGamingVF).               % una propertyExpectation di BW per ogni coppia di servizi della chain
+propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, _, edgeGamingVF).               % one BW propertyExpectation for each chain services couple
 propertyExpectation(gsIntent, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent, latency, smaller, hard, 55, ms, gateway, edgeGamingVF).
 
@@ -40,15 +40,15 @@ vnf(encVF, edge, 2).
 vnf(logVF, cloud, 1).
 
 
-% vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(edgeGamingVF, s, (1,100), 6).
-vnfXUser(edgeGamingVF, m, (101,1000), 9).
-vnfXUser(edgeGamingVF, l, (1001,inf), 12).
-vnfXUser(cloudGamingVF, s, (1, 1000), 60).
-vnfXUser(cloudGamingVF, m, (1001, 10000), 80).
-vnfXUser(cloudGamingVF, l, (10001, inf), 120).
-vnfXUser(encVF, s, (0, inf), 2).
-vnfXUser(logVF, s, (0, inf), 1).
+% vnfXUser(Id, Version, UsersRange, (ramReqs, vCPUReq, storageReq) ).
+vnfXUser(edgeGamingVF, s, (1,100), (2,2,0)).
+vnfXUser(edgeGamingVF, m, (101,1000), (4,2,0)).
+vnfXUser(edgeGamingVF, l, (1001,inf), (8,4,0)).
+vnfXUser(cloudGamingVF, s, (1, 1000), (24,10,0)).
+vnfXUser(cloudGamingVF, m, (1001, 10000), (32,16,0)).
+vnfXUser(cloudGamingVF, l, (10001, inf), (49,20,0)).
+vnfXUser(encVF, s, (0, inf), (2,2,0)).
+vnfXUser(logVF, s, (0, inf), (1,1,0)).
 
 
 
@@ -84,13 +84,13 @@ vnf(logVF, edge, 1).
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(edgeStreamingVF, s, (1,100), 3).
-vnfXUser(edgeStreamingVF, m, (101,1000), 5).
-vnfXUser(edgeStreamingVF, l, (1001,inf), 7).
-vnfXUser(cloudStreamingVF, s, (1, 1000), 24).
-vnfXUser(cloudStreamingVF, m, (1001, 10000), 38).
-vnfXUser(cloudStreamingVF, l, (10001, inf), 60).
-% vnfXUser(logVF, s, (0, inf), 1).   già presente precedentemente
+vnfXUser(edgeStreamingVF, s, (1,100), (2,1,1)).
+vnfXUser(edgeStreamingVF, m, (101,1000), (3,1,1)).
+vnfXUser(edgeStreamingVF, l, (1001,inf), (4,2,1)).
+vnfXUser(cloudStreamingVF, s, (1, 1000), (8,4,0)).
+vnfXUser(cloudStreamingVF, m, (1001, 10000), (12,6,0)).
+vnfXUser(cloudStreamingVF, l, (10001, inf), (16,8,0)).
+% vnfXUser(logVF, ...).   già presente precedentemente
 
 
 
@@ -98,7 +98,7 @@ vnfXUser(cloudStreamingVF, l, (10001, inf), 60).
 /* INTENT MODEL (by user) */
 
 % intent(Stakeholder, IntentID, NUsers, TargetId).
-% intent(homeBankingOpp, hbIntent, 1500, homeBankingService).
+intent(homeBankingOpp, hbIntent, 5000, homeBankingService).
 
 
 % Changing property
@@ -131,14 +131,14 @@ vnf(authVF, cloud, 2).
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(edgeHomeBankingVF, s, (1,inf), 8).
-vnfXUser(cloudHomeBankingVF, s, (1, 4000), 25).
-vnfXUser(cloudHomeBankingVF, m, (4001, 12000), 36).
-vnfXUser(cloudHomeBankingVF, l, (12001, inf), 50).
-vnfXUser(cloudDPI, m, (1, inf), 18).
-vnfXUser(authVF, s, (0, inf), 2).                 
-% vnfXUser(encVF, s, (0, inf), 2).                  già dichiarata
-% vnfXUser(logVF, s, (0, inf), 1).                  già dichiarata
+vnfXUser(edgeHomeBankingVF, s, (1,inf), (4,3,1)).
+vnfXUser(cloudHomeBankingVF, s, (1, 4000), (8,4,2)).
+vnfXUser(cloudHomeBankingVF, m, (4001, 12000), (12,6,4)).
+vnfXUser(cloudHomeBankingVF, l, (12001, inf), (18,8,8)).
+vnfXUser(cloudDPI, m, (1, inf), (12,3,0)).
+vnfXUser(authVF, s, (0, inf), (1,1,0)).                 
+% vnfXUser(encVF, ...).                  già dichiarata
+% vnfXUser(logVF, ...).                  già dichiarata
 
 
 
@@ -171,6 +171,6 @@ vnf(authVF, edge, 2).
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(cloudStorageVF, s, (1, 250), 10).
-vnfXUser(cloudStorageVF, l, (251, inf), 30).
+vnfXUser(cloudStorageVF, s, (1, 250), (0,0,10)).
+vnfXUser(cloudStorageVF, l, (251, inf), (0,0,30)).
 % vnfXUser(authVF, s, (0, inf), 2).                 già dichiarata

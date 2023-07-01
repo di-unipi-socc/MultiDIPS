@@ -14,20 +14,3 @@
 3''. MILP vs Prolog
 3'''. Proposta TDR 
 */
-
-subList(P, From, To, P) :- var(From), var(To).
-subList(P, From, To, NewP) :- var(From), nonvar(To), removeAfterTo(P, To, [], NewP).
-subList(P, From, To, NewP) :- nonvar(From), var(To), removeBeforeFrom(P, From, NewP).
-subList(P, From, To, NewP) :- nonvar(From), nonvar(To), removeBeforeFrom(P, From, TmpP), removeAfterTo(TmpP, To, [], NewP).
-
-removeAfterTo([on(X,D,N)|T], To, OldP, NewP) :-
-    dif(X, To),
-    append(OldP, [on(X,D,N)], TmpP),
-    removeAfterTo(T, To, TmpP, NewP).
-removeAfterTo([on(To,D,N)|_], To, OldP, NewP) :-
-    append(OldP, on(To,D,N), NewP).
-
-removeBeforeFrom([on(X,_,_)|T], From, NewP) :-
-    dif(X, From),
-    removeBeforeFrom(T, From, NewP).
-removeBeforeFrom([on(From,D,N)|T], From, [on(From,D,N)|T]).

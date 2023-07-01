@@ -1,4 +1,3 @@
-
 minBW([on(X,_,N)|Zs], From, To, BW, AllocatedBW) :- var(From), minBW([on(X,_,N)|Zs], X, To, BW, AllocatedBW).   % _ - VNF/node
 
 minBW(_, From, To, BW, AllocatedBW) :- nonvar(From), node(From, _, _), node(To, _, _), link(From, To, _, TmpBW), usedBW(From, To, AllocatedBW, UBW), BW is TmpBW - UBW. % node - node
@@ -46,19 +45,60 @@ usedBW(From, To, AllocatedBW, UsedBW) :-
     findall(UBW, member((From, To, UBW), AllocatedBW), UBWList),
     sumlist(UBWList, UsedBW).
 
+% First in - first served
+rankIntent1(OrderedIntentList, _, OrderedIntentList)..
+
+% Shorter Chain. If Chains lengths are equals, minimum number of property
+rankIntent2([intent(StakeHolder, IID, NUsers, TId)|T], UnorderedIntentList, OrderedIntentList) :-       
+    target(TId, Chain), length(Chain, TmpChainLength),
+    findall(CProperty, propertyExpectation(IID, CProperty, _, _, _), CPList), length(CPList, NumCProperty),
+    ChainLength is TmpChainLength + NumCProperty,
+    findall(NCProperty, propertyExpectation(IID, NCProperty, _, _, _, _, _, _), NCPList), length(NCPList, NumNCProperty),
+    rankIntent2(T, [(ChainLength, NumNCProperty, intent(StakeHolder, IID, NUsers, TId))|UnorderedIntentList], OrderedIntentList).
+rankIntent2([], UnorderedIntentList, OrderedIntentList) :- 
+    sort(UnorderedIntentList, TmpOrderedIntentList),
+    maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+
+% Intent with (estimated) less resources needed first
+rankIntent3([intent(StakeHolder, IID, NUsers, TId)|T], UnorderedIntentList, OrderedIntentList) :- 
+    target(TId, Chain), findReqHW(Chain, NUsers, 0, ChainHW),
+    findall(F, (propertyExpectation(IID, Property, _, _, _), changingProperty(Property, F)), CProperty), findReqHW(CProperty, NUsers, 0, CPropertyHW),
+    HW is ChainHW + CPropertyHW,
+    rankIntent3(T, [(HW, 0, intent(StakeHolder, IID, NUsers, TId))|UnorderedIntentList], OrderedIntentList).
+rankIntent3([], UnorderedIntentList, OrderedIntentList) :-
+    sort(UnorderedIntentList, TmpOrderedIntentList),
+    maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+
+% Random
+rankIntent4(IntentList, _, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
 
 findBW(IntentID, F, _, NewBWValue) :-
     propertyExpectation(IntentID, bandwidth, larger, hard, NewBWValue, megabps, _, F).
 findBW(IntentID, F, LastBWValue, LastBWValue) :-
     \+ propertyExpectation(IntentID, bandwidth, larger, hard, _, megabps, _, F).
 
+findReqHW([F|T], NUsers, Acc, HW) :-
+    vnfXUser(F, _, (Min, Max), TmpHW),
+    between(Min, Max, NUsers),
+    NewHW is TmpHW + Acc,
+    findReqHW(T, NUsers, NewHW, HW).
+findReqHW([], _, HW, HW).
 
-allocatedHW([P|T], N, HWTot) :-
-    allocatedHW(T, N, TmpHWTot),
-    findall(HW, (member(on(VNF, V, N), P), vnfXUser(VNF, V, _, HW)), HWs), sumlist(HWs, HWTmp),
-    HWTot is TmpHWTot + HWTmp.
+allocatedHW([P|T], N, AllocHW) :-
+    allocatedHW(T, N, PsAllocHW),
+    findall(HWReqs, (member(on(VNF, V, N), P), vnfXUser(VNF, V, _, HWReqs)), HWs), sumHWs(HWs, PAllocHW),
+    AllocHW is PsAllocHW + PAllocHW.
 allocatedHW([], _, 0).
 
+sumHWs([(RamReq, CPUReq, StorageReq)|T], PAllocHW) :-
+    sumHWs(T, (AllocRam, AllocCPU, AllocStorage)),
+    PAllocHW is (RamReq+AllocRam, CPUReq+AllocCPU, StorageReq+AllocStorage).
+sumHWs([], (0,0,0)).
+
+sumBW([(_,_,BWValue)|T], TotValue) :-
+    sumBW(T, TmpValue),
+    TotValue is TmpValue + BWValue.
+sumBW([], 0).
 
 addedAtEdge([X,Y|Zs], G, [X|NewZs]) :- X = (_, cloud), addedAtEdge([Y|Zs], G, NewZs).
 addedAtEdge([X,Y|Zs], G, [G,X|NewZs]) :- X = (_, edge), addedAtEdge2([Y|Zs], G, NewZs).
