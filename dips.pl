@@ -4,15 +4,6 @@
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
-/*
-go(Problem, BestSol, PBest) :-
-    solution(Problem, BestSol), profit(BestSol, PBest),
-    \+ (solution(Problem, Sol), dif(BestSol, Sol), profit(Sol,P), P > PBest).
-
-IDEE: 
-- globali -> anche resource usage medio?
-- keep intent id in the placement?
-*/
 
 optimumDips(Output) :-
     statistics(runtime,[Start|_]), % CPU time, maybe?

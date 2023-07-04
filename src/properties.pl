@@ -13,25 +13,33 @@ chainModifiedByProperty(_, _, From, To, F, Chain, NewChain) :- nonvar(From), non
 
 % NON-CHANGING PROPERTIES
 
-checkProperty(IntentID, latency, From, To, Placement, _, OldUP, OldUP) :-
+checkProperty(IntentID, latency, From, To, Placement, OldUP, OldUP) :-
     propertyExpectation(IntentID, latency, smaller, _, Value, _, From, To), pathLat(Placement, From, To, Lat), 
     Lat =< Value.
-checkProperty(IntentID, latency, From, To, Placement, _, OldUP, [(latency, desired(Value), actual(Lat))|OldUP]) :-
+checkProperty(IntentID, latency, From, To, Placement, OldUP, [(latency, desired(Value), actual(Lat))|OldUP]) :-
     propertyExpectation(IntentID, latency, smaller, soft, Value, _, From, To), pathLat(Placement, From, To, Lat), 
     Lat > Value.
-checkProperty(IntentID, bandwidth, From, To, Placement, OldAllocatedBW, OldUP, OldUP) :-
-    propertyExpectation(IntentID, bandwidth, larger, _, Value, _, From, To), minBW(Placement, From, To, BW, OldAllocatedBW),
-    BW >= Value.
+
+checkBW(P, AllocBW, OldAllocBW) :-
+    placementPath(P, Path),
+    append(AllocBW, OldAllocBW, TotAllocBW),
+    checkLinks(Path, TotAllocBW).
+
+checkLinks([(N, M)|T], AllocBW) :-
+    checkLinks(T, AllocBW),
+    findall(UsedBW, member((N, M, UsedBW), AllocBW), UsedBWs), sumlist(UsedBWs, TotUsedBW),
+    link(N ,M, _, BW), TotUsedBW =< BW.
+checkLinks([], _).
 
 
 % GLOBAL PROPERTIES
 
-checkGlobalProperties(PsInfo, PInfo, [(footprint, Cap)|T]) :-
-    PsInfo = (_, _, OldC, _, _, _, _), Info = (_, _, C, _, _, _, _),
-    OldC + C =< Cap, 
-    checkGlobalProperties(PsInfo, PInfo, T).
-checkGlobalProperties(PsInfo, PInfo, [(energy, Cap)|T]) :-
-    PsInfo = (_, _, _, OldE, _, _, _), Info = (_, _, _, E, _, _, _),
-    OldE + E =< Cap,
-    checkGlobalProperties(PsInfo, PInfo, T).
-checkGlobalProperties(_, _, []).
+checkGlobalProperties([(footprint, Cap)|T], PsInfo, PInfo) :-
+    checkGlobalProperties(T, PsInfo, PInfo),
+    PsInfo = info(_, OldC, _, _, _, _), PInfo = info(_, C, _, _, _, _), 
+    OldC + C =< Cap.
+checkGlobalProperties([(energy, Cap)|T], PsInfo, PInfo) :-
+    checkGlobalProperties(T, PsInfo, PInfo),
+    PsInfo = info(_, _, OldE, _, _, _), PInfo = info(_, _, E, _, _, _),
+    OldE + E =< Cap.
+checkGlobalProperties([], _, _).

@@ -4,151 +4,144 @@
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
-/*
-go(Problem, BestSol, PBest) :-
-    solution(Problem, BestSol), profit(BestSol, PBest),
-    \+ (solution(Problem, Sol), dif(BestSol, Sol), profit(Sol,P), P > PBest).
-
-IDEE: 
-- globali -> anche resource usage medio?
-- keep intent id in the placement?
-*/
-
+%% OPTIMUM SOLUTION %%
 optimumDips(Output) :-
-    findall(intent(SH, IID, N, TId), intent(SH, IID, N, TId), AllIntents),
-    findall((P, Cap), globalIntent(P, smaller, Cap, _), GlobProps),
-    optimalPlacementsInfo(AllIntents, GlobProps, Output). 
+    findall(intent(StakeHolder, IntentId, NUsers, TId), intent(StakeHolder, IntentId, NUsers, TId), AllIntents),
+    findall((Prop, Cap), globalIntent(Prop, smaller, Cap, _), GlobProps),
+    optimalPsInfo(AllIntents, GlobProps, Output). 
 
-optimalPlacementsInfo(AllIntents, GlobProps, BestSol) :-
+optimalPsInfo(AllIntents, GlobProps, BestSol) :-
     findall(PsInfo, validPsInfo(AllIntents, GlobProps, PsInfo), Sols),
-    sort(2, @>=, Sols, [BestSol|_]).
+    sort(1, @>=, Sols, [BestSol|_]).
 
 validPsInfo(IntentList, GlobProps, PsInfo) :-
     StartingPInfo = info(0, 0, 0, [], [], []),
     validPsInfo(IntentList, GlobProps, StartingPInfo, PsInfo).
 
-validPsInfo([intent(StakeHolder, IID, NUsers, _)|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+validPsInfo([intent(StakeHolder, IntentId, NUsers, _)|Is], GlobProps, OldPsInfo, NewPsInfo) :-
     OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
-    dips(StakeHolder, IID, NUsers, OldPs, OldAllocBW, PInfo),  
-    checkGlobalProperties(OldPsInfo, PInfo, GlobProps),
-    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
+    findall(PInfo, dips(StakeHolder, IntentId, NUsers, OldPs, OldAllocBW, PInfo), T),
+    AllPInfo = [info(0,0,0,(IntentId,[]),[],[])|T],
+    member(ChoosenPInfo, AllPInfo),
+    checkGlobalProperties(GlobProps, OldPsInfo, ChoosenPInfo),
+    mergePlacements(OldPsInfo, ChoosenPInfo, TmpPsInfo),
     validPsInfo(Is, GlobProps, TmpPsInfo, NewPsInfo).
-validPsInfo([], _, _, _, PsInfo, PsInfo).
+validPsInfo([], _, PsInfo, PsInfo).
+
+%% HEURISTIC SOLUTION %%
+multiDips(Output) :-
+    findall(intent(StakeHolder, IntentId, NUsers, TargetId), intent(StakeHolder, IntentId, NUsers, TargetId), IntentList),
+    findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
+    rankIntent3(IntentList, [], OrderedIntentList),
+    StartingPInfo = info(0, 0, 0, [], [], []),
+    callDips(OrderedIntentList, GlobProps, StartingPInfo, Output).
+
+callDips([intent(StakeHolder, IntentId, NUsers, _)|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+    OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
+    (dips(StakeHolder, IntentId, NUsers, OldPs, OldAllocBW, PInfo),     % we use the first valid solution found with the heuristic   
+    checkGlobalProperties(GlobProps, OldPsInfo, PInfo) -> true; PInfo = info(0,0,0,(IntentId,[]),[],[])),             
+    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
+    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
+callDips([], _, NewPsInfo, NewPsInfo).
 
 mergePlacements(OldInfo, Info, NewInfo) :-
     OldInfo = info(OldPR, OldC, OldE, OldPs, OldAllocBW, OldU), Info = info(PR, C, E, P, AllocBW, U),
     NewPR is OldPR + PR, NewC is OldC + C, NewE is OldE + E,
-    NewInfo = info(NewPR, NewC, NewE, [P|OldPs], [AllocBW|OldAllocBW], [U|OldU]).
-
-
-multiDips(Output) :-
-    findall(intent(StakeHolder, IntentID, NUsers, TargetId), intent(StakeHolder, IntentID, NUsers, TargetId), IntentList),
-    findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
-    rankIntent3(IntentList, [], OrderedIntentList),
-    StartingPInfo = info(0, 0, 0, [], [], []),
-    callDips(OrderedIntentList, GlobProps, StartingPInfo, Output), !.
-
-callDips([intent(StakeHolder, IID, NUsers, _)|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    OldPsInfo = info(OldPR, OldC, OldE, OldPs, OldAllocBW, OldU),
-    dips(StakeHolder, IID, NUsers, OldPs, OldAllocBW, PInfo),       
-    checkGlobalProperties(OldPsInfo, PInfo, GlobProps),             % gestire fallimento
-    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
-    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
-callDips([], _, NewPsInfo, NewPsInfo).
+    append(AllocBW, OldAllocBW, NewAllocBW),
+    NewInfo = info(NewPR, NewC, NewE, [P|OldPs], NewAllocBW, [U|OldU]).
     
 
-dips(StakeHolder, IID, NUsers, OldPs, OldAllocBW, PInfo) :-
-    chainForIntent(StakeHolder, IntentID, Chain),
-    dimensionedChain(Chain, NUsers, DimChain),
-    findall((Prop, From, To), propertyExpectation(IntentID, Prop, _, _, _, _, From, To), NonChangProp),      
-    placedChain(DimChain, IID, OldPs, AllocBW, P),
-    checkPlacement(IID, NonChangProp, P, OldAllocBW, UnsatProp),
-    findPInfo(P, OldPs, UnsatProp, AllocBW, PInfo).
+dips(StakeHolder, IntentId, NUsers, OldPs, OldAllocBW, PInfo) :-
+    chainForIntent(StakeHolder, IntentId, Chain),
+    dimensionedChain(Chain, NUsers, DimChain),      
+    placedChain(DimChain, IntentId, OldPs, AllocBW, P),
+    checkPlacement(IntentId, P, AllocBW, OldAllocBW, UnsatProp),
+    findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo).
 
-findPInfo(P, OldPs, UnsatProp, AllocBW, PInfo) :-
-    calculateFootprintHW(P, OldPs, HWEnergy, HWCarbon),
+findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo) :-
+    calculateHWInfo(P, HWEnergy, HWCarbon, Profit),
     calculateFootprintBW(AllocBW, BWEnergy, BWCarbon),
     Carbon is HWCarbon + BWCarbon, Energy is HWEnergy + BWEnergy,
-    calculateProfit(P, BWEnergy, HWEnergy, Profit),
-    PInfo is (Profit, Carbon, Energy, P, AllocBW, UnsatProp).
+    PInfo = info(Profit, Carbon, Energy, (IntentId, P), AllocBW, UnsatProp).
+
 
 %% ASSEMBLY %%
-
-chainForIntent(StakeHolder, IntentID, Chain) :-
-    intent(StakeHolder, IntentID, _, TargetId), 
+chainForIntent(StakeHolder, IntentId, Chain) :-
+    intent(StakeHolder, IntentId, _, TargetId), 
     target(TargetId, ServiceChain), 
     layeredChain(ServiceChain, LChain),
-    findall((P,F), (changingProperty(P,F), propertyExpectation(IntentID, P, _, _, _)), Properties),
-    completedChain(IntentID, Properties, LChain, Chain).
-
+    findall((P,F), (changingProperty(P,F), propertyExpectation(IntentId, P, _, _, _)), Properties),
+    completedChain(IntentId, Properties, LChain, Chain).
 
 layeredChain([F|Fs], [(F,A)|NewFs]) :- 
     vnf(F, A, _), layeredChain(Fs, NewFs).
 layeredChain([], []).
 
-
-completedChain(IntentID, [(P,F)|Ps], Chain, NewChain) :- 
-    propertyExpectation(IntentID, P, Bound, From, To), vnf(F, Bound, _),
+completedChain(IntentId, [(P,F)|Ps], Chain, NewChain) :- 
+    propertyExpectation(IntentId, P, Bound, From, To), vnf(F, Bound, _),
     chainModifiedByProperty(P, Bound, From, To, (F,Bound), Chain, ModChain),
-    completedChain(IntentID, Ps, ModChain, NewChain).
+    completedChain(IntentId, Ps, ModChain, NewChain).
 completedChain(_, [], Chain, Chain).
 
 
 %% PLACEMENT %%
-
 dimensionedChain(Chain, NUsers, DimChain) :- 
     dimensionedChain(Chain, NUsers, [], DimChain).
 dimensionedChain([(F,A)|Zs], U, OldC, NewC) :- 
     vnfXUser(F, D, (L, H), _), between(L, H, U),  dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
 dimensionedChain([], _, Chain, Chain).
 
-
-placedChain(DimChain, IID, OldPs, AllocBW, P) :-                   
-    placedChain(DimChain, IID, _, _, OldPs, [], [], AllocBW, P).
-placedChain([(F, L, D)|VNFs], IID, LastNode, LastBWValue, OldPs, OldAllocBW, OldP, AllocBW, NewP) :-
-    vnfXUser(F, D, _, HWReqs), node(N, L, HWCaps),  
-    hwOK(N, HWReqs, HWCaps, [OldP|OldPs]),
-    findBW(IID, F, LastBWValue, NewBWValue),
+placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
+    findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, [], SortedNodes),                   
+    placedChain(DimChain, IntentId, OldPs, SortedNodes, start, start, [], [], AllocBW, P).
+placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, LastNode, LastBWValue, OldAllocBW, OldP, AllocBW, NewP) :-
+    vnfXUser(F, D, _, HWReqs), member((_,N), SortedNodes), node(N, L, HWCaps),
+    hwOK(N, HWReqs, HWCaps, [(IntentId, OldP)|OldPs]),
+    findBW(IntentId, F, LastBWValue, NewBWValue),
     calculateAllocatedBW(N, LastNode, LastBWValue, OldAllocBW, TmpAllocBW),
-    placedChain(VNFs, IID, N, NewBWValue, IID, OldPs, [on(F, D, N)|OldP], TmpAllocBW, NewP).
-placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
+    placedChain(VNFs, IntentId, OldPs, SortedNodes, N, NewBWValue, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
+placedChain([], _, _, _, _, _, AllocBW, NewP, AllocBW, NewP).
 
+hwOK(N, HWReqs, HWCaps, OldPs) :-
+    HWReqs = (RamReq, CPUReq, StorageReq),
+    HWCaps = (RamCap, CPUCap, StorageCap),
+    allocatedHW(OldPs, N, (AllocRam, AllocCPU, AllocStorage)),
+    RamReq + AllocRam =< RamCap, CPUReq + AllocCPU =< CPUCap, StorageReq + AllocStorage =< StorageCap.
 
-hwOK(N, HWReqs, HWCaps, OldPlacements) :-
-    HWReqs is (RamReq, CPUReq, StorageReq)
-    HWCaps is (RamCap, CPUCap, StorageCap),
-    allocatedHW(OldPlacements, N, (AllocRam, AllocCPU, AllocStorage)),
-    RamReq + AllocRam =< RamCap,
-    CPUReq + AllocCPU =< CPUCap,
-    StorageReq + AllocStorage =< StorageCap.
+calculateAllocatedBW(_, start, _, NewAllocBW, NewAllocBW).
+calculateAllocatedBW(N, M, BWValue, OldAllocBW, [(N, M, BWValue)|OldAllocBW]) :- dif(M, start), dif(N,M). 
+calculateAllocatedBW(N, N, _, NewAllocBW, NewAllocBW). 
 
+calculateHWInfo([on(F, D, N)|T], TotHWEnergy, TotHWCarbon, TotProfit):-
+    calculateHWInfo(T, TmpHWEnergy, TmpHWCarbon, TmpProfit),
+    energySourceMix(N, Sources),
+    calculateEnergy(on(F, D, N), HWEnergy),
+    carbon(Sources, HWEnergy, HWCarbon),
+    calculateProfit(on(F, D, N), HWEnergy, Profit),
+    TotHWEnergy is TmpHWEnergy + HWEnergy, TotHWCarbon is TmpHWCarbon + HWCarbon, TotProfit is TmpProfit + Profit.
+calculateHWInfo([], 0, 0, 0).
 
-calculateAllocatedBW(_, M, _, NewAllocBW, NewAllocBW) :- var(M).
-calculateAllocatedBW(N, M, BWValue, TmpAllocBW, [(N, M, BWValue)|TmpAllocBW]) :- dif(N,M), nonvar(M). 
-calculateAllocatedBW(N, N, _, T, T) :- nonvar(N). 
-
-
-calculateFootprintHW([on(F, D, N)|T], OldPs, TotHWEnergy, TotHWCarbon):-
-    calculateFootprintHW(T, OldPs, TmpHWEnergy, TmpHWCarbon),
-    vnfXUser(VNF, D, _, (Ram, CPU, Storage))
+calculateEnergy(on(F, D, N), HWEnergy) :-
+    vnfXUser(F, D, _, (Ram, CPU, Storage)),
     totHW(N, (TotRam, TotCPU, TotStorage)),
-    pue(N, PUE), energySourceMix(N, Sources),
+    pue(N, PUE),
     RamLInc is Ram / TotRam, ramEnergyProfile(N, RamLInc, RamE), 
     CPULInc is CPU / TotCPU, cpuEnergyProfile(N, CPULInc, CPUE),
     StorageLInc is Storage / TotStorage, storageEnergyProfile(N, StorageLInc, StorageE),
-    HWEnergy is RamE + CPUE + StorageE,
-    carbon(Sources, HWEnergy, HWCarbon),
-    TotHWEnergy is TmpHWEnergy + HWEnergy,
-    TotHWCarbon is TmpHWCarbon + HWCarbon. 
-
+    HWEnergy is (RamE + CPUE + StorageE) * PUE.
 
 carbon([(Prob, Src)|Srcs], HWEnergy, HWCarbon) :-
-    carbon(Srcs, HWEnergy, SrcsCarbon)
+    carbon(Srcs, HWEnergy, SrcsCarbon),
     emissions(Src, MU), 
     SrcCarbon is Prob * MU * HWEnergy,
     HWCarbon is SrcCarbon + SrcsCarbon.
 carbon([], _, 0).
 
+calculateProfit(on(F, D, N), HWEnergy, Profit) :-
+    vnfXUser(F, D, _, (RamReq, CPUReq, StorageReq)),
+    node(N,L,_), price(L, (RamPrice, CPUPrice, StoragePrice)), energyCost(N, ECost),
+    Profit is RamReq * RamPrice + CPUReq * CPUPrice + StorageReq * StoragePrice - HWEnergy * ECost.
+calculateProfit([], _, 0).
 
 calculateFootprintBW(AllocBW, BWEnergy, BWCarbon) :-
     sumBW(AllocBW, BWValue),
@@ -156,17 +149,12 @@ calculateFootprintBW(AllocBW, BWEnergy, BWCarbon) :-
     BWEnergy is BWValue * V,
     BWCarbon is BWEnergy * GCI.
 
-
-calculateProfit([on(F, D, N)|T], BWEnergy, HWEnergy, Profit) :-
-    calculateProfit(T, BWEnergy, HWEnergy, TmpProfit),
-    vnfXUser(F, D, _, (RamReq, CPUReq, StorageReq)),
-    node(N,L,_), price(L, (RamPrice, CPUPrice, StoragePrice)), cost(N, Cost), energyCost(N, ECost),
-    Profit is TmpoProfit + RamReq * RamPrice + CPUReq * CPUPrice + StorageReq * StoragePrice - (HWEnergy + BWEnergy) * ECost.
-
-
-checkPlacement(IntentID, NonChangProp, Placement, OldAllocatedBW, UnsatProp) :-
-    checkPlacement(IntentID, NonChangProp, Placement, OldAllocatedBW, [], UnsatProp).
-checkPlacement(IntentID, [(P, From, To)|Ps], Placement, OldAllocatedBW, OldUnsatProp, NewUnsatProp) :- 
-    checkProperty(IntentID, P, From, To, Placement, OldAllocatedBW, OldUnsatProp, TmpUnsatProp), 
-    checkPlacement(IntentID, Ps, Placement, OldAllocatedBW, TmpUnsatProp, NewUnsatProp).
-checkPlacement(_, [], _, _, UnsatProp, UnsatProp).
+%% PROPERTIES CHECK %%
+checkPlacement(IntentId, P, AllocBW, OldAllocBW, UnsatProp) :-
+    checkBW(P, AllocBW, OldAllocBW),
+    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, _, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
+    checkProperties(NonChangProp, IntentId, P, [], UnsatProp).
+checkProperties([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
+    checkProperty(IntentId, Prop, From, To, P, OldUnsatProp, TmpUnsatProp), 
+    checkProperties(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
+checkProperties([], _, _, UnsatProp, UnsatProp).

@@ -22,9 +22,10 @@ propertyExpectation(gsIntent, logging, cloud, cloudGamingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, _, edgeGamingVF).               % one BW propertyExpectation for each chain services couple
+propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, start, edgeGamingVF).               % one BW propertyExpectation for each chain services couple
 propertyExpectation(gsIntent, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
-propertyExpectation(gsIntent, latency, smaller, hard, 55, ms, gateway, edgeGamingVF).
+propertyExpectation(gsIntent, bandwidth, larger, hard, 1, megabps, cloudGamingVF, end).
+propertyExpectation(gsIntent, latency, smaller, hard, 55, ms, start, edgeGamingVF).
 
 
 /* PROVIDER/TARGET-DEPENDENT MODEL */
@@ -41,10 +42,10 @@ vnf(logVF, cloud, 1).
 
 
 % vnfXUser(Id, Version, UsersRange, (ramReqs, vCPUReq, storageReq) ).
-vnfXUser(edgeGamingVF, s, (1,100), (2,2,0)).
+vnfXUser(edgeGamingVF, s, (0,100), (2,2,0)).
 vnfXUser(edgeGamingVF, m, (101,1000), (4,2,0)).
-vnfXUser(edgeGamingVF, l, (1001,inf), (8,4,0)).
-vnfXUser(cloudGamingVF, s, (1, 1000), (24,10,0)).
+vnfXUser(edgeGamingVF, l, (1001,inf), (6,3,0)).
+vnfXUser(cloudGamingVF, s, (0, 1000), (24,10,0)).
 vnfXUser(cloudGamingVF, m, (1001, 10000), (32,16,0)).
 vnfXUser(cloudGamingVF, l, (10001, inf), (49,20,0)).
 vnfXUser(encVF, s, (0, inf), (2,2,0)).
@@ -61,14 +62,15 @@ intent(streamAppOp, ssIntent, 2000, streamingService).
 
 % Changing property
 % propertyExpectation(IntentID, Property, Bound, From/Before, To/After).
-propertyExpectation(ssIntent, logging, edge, _, _).
+propertyExpectation(ssIntent, compression, cloud, cloudStreamingVF, _).
 
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(ssIntent, bandwidth, larger, hard, 20, megabps, _, edgeStreamingVF).
+propertyExpectation(ssIntent, bandwidth, larger, hard, 20, megabps, start, edgeStreamingVF).
 propertyExpectation(ssIntent, bandwidth, larger, hard, 60, megabps, edgeStreamingVF, cloudStreamingVF).
-propertyExpectation(ssIntent, latency, smaller, soft, 30, ms, gateway, edgeStreamingVF).
+propertyExpectation(ssIntent, bandwidth, larger, hard, 1, megabps, cloudStreamingVF, end).
+propertyExpectation(ssIntent, latency, smaller, soft, 30, ms, start, edgeStreamingVF).
 
 
 /* PROVIDER/TARGET-DEPENDENT MODEL */
@@ -80,17 +82,17 @@ target(streamingService, [edgeStreamingVF, cloudStreamingVF]).
 % vnf(Id, Affinity, ProcessingTime).
 vnf(edgeStreamingVF, edge, 15).
 vnf(cloudStreamingVF, cloud, 8).
-vnf(logVF, edge, 1).
+vnf(compVF, cloud, 2).
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(edgeStreamingVF, s, (1,100), (2,1,1)).
-vnfXUser(edgeStreamingVF, m, (101,1000), (3,1,1)).
-vnfXUser(edgeStreamingVF, l, (1001,inf), (4,2,1)).
-vnfXUser(cloudStreamingVF, s, (1, 1000), (8,4,0)).
+vnfXUser(edgeStreamingVF, s, (0,100), (2,1,1)).
+vnfXUser(edgeStreamingVF, m, (101,3000), (3,1,1)).
+vnfXUser(edgeStreamingVF, l, (4001,inf), (4,2,1)).
+vnfXUser(cloudStreamingVF, s, (0, 1000), (8,4,0)).
 vnfXUser(cloudStreamingVF, m, (1001, 10000), (12,6,0)).
 vnfXUser(cloudStreamingVF, l, (10001, inf), (16,8,0)).
-% vnfXUser(logVF, ...).   già presente precedentemente
+vnfXUser(compVF, m, (0, inf), (1,2,0)).
 
 
 
@@ -98,7 +100,7 @@ vnfXUser(cloudStreamingVF, l, (10001, inf), (16,8,0)).
 /* INTENT MODEL (by user) */
 
 % intent(Stakeholder, IntentID, NUsers, TargetId).
-intent(homeBankingOpp, hbIntent, 5000, homeBankingService).
+intent(homeBankingOp, hbIntent, 5000, homeBankingService).
 
 
 % Changing property
@@ -110,8 +112,9 @@ propertyExpectation(hbIntent, logging, cloud, cloudHomeBankingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(hbIntent, bandwidth, larger, hard, 5, megabps, _, edgeHomeBankingVF).               % una propertyExpectation di BW per ogni coppia di servizi della chain
+propertyExpectation(hbIntent, bandwidth, larger, hard, 5, megabps, start, edgeHomeBankingVF).               % una propertyExpectation di BW per ogni coppia di servizi della chain
 propertyExpectation(hbIntent, bandwidth, larger, hard, 10, megabps, edgeHomeBankingVF, cloudHomeBankingVF).
+propertyExpectation(hbIntent, bandwidth, larger, hard, 1, megabps, cloudHomeBankingVF, end).
 propertyExpectation(hbIntent, latency, smaller, soft, 190, ms, edgeHomeBankingVF, cloudHomeBankingVF).
 
 
@@ -126,19 +129,19 @@ vnf(edgeHomeBankingVF, edge, 8).
 vnf(cloudDPI, cloud, 25).
 vnf(cloudHomeBankingVF, cloud, 8).
 vnf(authVF, cloud, 2).             
-% vnf(encVF, edge, 2).             già dichiarata
-% vnf(logVF, cloud, 1).             già dichiarata
+% vnf(encVF, edge, 2).             already declared
+% vnf(logVF, cloud, 1).            already declared
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(edgeHomeBankingVF, s, (1,inf), (4,3,1)).
-vnfXUser(cloudHomeBankingVF, s, (1, 4000), (8,4,2)).
+vnfXUser(edgeHomeBankingVF, s, (0,inf), (4,3,1)).
+vnfXUser(cloudHomeBankingVF, s, (0, 4000), (8,4,2)).
 vnfXUser(cloudHomeBankingVF, m, (4001, 12000), (12,6,4)).
 vnfXUser(cloudHomeBankingVF, l, (12001, inf), (18,8,8)).
-vnfXUser(cloudDPI, m, (1, inf), (12,3,0)).
+vnfXUser(cloudDPI, m, (0, inf), (12,3,0)).
 vnfXUser(authVF, s, (0, inf), (1,1,0)).                 
-% vnfXUser(encVF, ...).                  già dichiarata
-% vnfXUser(logVF, ...).                  già dichiarata
+% vnfXUser(encVF, ...).                  already declared
+% vnfXUser(logVF, ...).                  already declared
 
 
 
@@ -146,7 +149,7 @@ vnfXUser(authVF, s, (0, inf), (1,1,0)).
 /* INTENT MODEL (by user) */
 
 % intent(Stakeholder, IntentID, NUsers, TargetId).
-intent(cloudStorageOpp, csIntent, 500, cloudStorageService).
+intent(cloudStorageOp, csIntent, 500, cloudStorageService).
 
 
 % Changing property
@@ -156,7 +159,8 @@ propertyExpectation(csIntent, security, edge, cloudStorageVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(csIntent, bandwidth, larger, hard, 15, megabps, _, cloudStorageVF).
+propertyExpectation(csIntent, bandwidth, larger, hard, 15, megabps, start, cloudStorageVF).
+propertyExpectation(csIntent, bandwidth, larger, hard, 15, megabps, cloudStorageVF, end).
 
 
 /* PROVIDER/TARGET-DEPENDENT MODEL */
@@ -171,6 +175,6 @@ vnf(authVF, edge, 2).
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
-vnfXUser(cloudStorageVF, s, (1, 250), (0,0,10)).
+vnfXUser(cloudStorageVF, s, (0, 250), (0,0,10)).
 vnfXUser(cloudStorageVF, l, (251, inf), (0,0,30)).
-% vnfXUser(authVF, s, (0, inf), 2).                 già dichiarata
+% vnfXUser(authVF, s, (0, inf), 2).                 already declared
