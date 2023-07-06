@@ -1,4 +1,4 @@
-:-['src/data.pl', 'src/dataInfrProv.pl','src/properties.pl'].
+:-['src/data.pl', 'src/dataInfrProv.pl','src/properties.pl','src/rank.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
 :- set_prolog_flag(stack_limit, 32 000 000 000).
@@ -18,10 +18,9 @@ validPsInfo(IntentList, GlobProps, PsInfo) :-
     StartingPInfo = info(0, 0, 0, [], [], []),
     validPsInfo(IntentList, GlobProps, StartingPInfo, PsInfo).
 
-validPsInfo([intent(StakeHolder, IntentId, NUsers, _)|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
-    findall(PInfo, dips(StakeHolder, IntentId, NUsers, OldPs, OldAllocBW, PInfo), T),
-    AllPInfo = [info(0,0,0,(IntentId,[]),[],[])|T],
+validPsInfo([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+    findall(PInfo, dips(Intent, OldPsInfo, PInfo), PInfos),
+    empty(Intent, EmptyPInfo), AllPInfo = [EmptyPInfo|PInfos],
     member(ChoosenPInfo, AllPInfo),
     checkGlobalProperties(GlobProps, OldPsInfo, ChoosenPInfo),
     mergePlacements(OldPsInfo, ChoosenPInfo, TmpPsInfo),
@@ -36,13 +35,23 @@ multiDips(Output) :-
     StartingPInfo = info(0, 0, 0, [], [], []),
     callDips(OrderedIntentList, GlobProps, StartingPInfo, Output).
 
-callDips([intent(StakeHolder, IntentId, NUsers, _)|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
-    (dips(StakeHolder, IntentId, NUsers, OldPs, OldAllocBW, PInfo),     % we use the first valid solution found with the heuristic   
-    checkGlobalProperties(GlobProps, OldPsInfo, PInfo) -> true; PInfo = info(0,0,0,(IntentId,[]),[],[])),             
+callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+    fulfilledIntent(Intent, GlobProps, OldPsInfo, PInfo),             
     mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
     callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
 callDips([], _, NewPsInfo, NewPsInfo).
+
+callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+    \+ fulfilledIntent(Intent, GlobProps, OldPsInfo, _),
+    empty(Intent, PInfo),             
+    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
+    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
+
+empty(Intent, PInfo) :- Intent = intent(_, IntentId, _, _), PInfo = info(0,0,0,(IntentId,[]),[],[]).
+
+fulfilledIntent(Intent, GlobProps, OldPsInfo, PInfo):-
+    dips(Intent, OldPsInfo, PInfo),     
+    checkGlobalProperties(GlobProps, OldPsInfo, PInfo).
 
 mergePlacements(OldInfo, Info, NewInfo) :-
     OldInfo = info(OldPR, OldC, OldE, OldPs, OldAllocBW, OldU), Info = info(PR, C, E, P, AllocBW, U),
@@ -51,8 +60,9 @@ mergePlacements(OldInfo, Info, NewInfo) :-
     NewInfo = info(NewPR, NewC, NewE, [P|OldPs], NewAllocBW, [U|OldU]).
     
 
-dips(StakeHolder, IntentId, NUsers, OldPs, OldAllocBW, PInfo) :-
-    chainForIntent(StakeHolder, IntentId, Chain),
+dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
+    OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
+    chainForIntent(IntentId, TargetId, Chain),
     dimensionedChain(Chain, NUsers, DimChain),      
     placedChain(DimChain, IntentId, OldPs, AllocBW, P),
     checkPlacement(IntentId, P, AllocBW, OldAllocBW, UnsatProp),
@@ -66,8 +76,7 @@ findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo) :-
 
 
 %% ASSEMBLY %%
-chainForIntent(StakeHolder, IntentId, Chain) :-
-    intent(StakeHolder, IntentId, _, TargetId), 
+chainForIntent(IntentId, TargetId, Chain) :-
     target(TargetId, ServiceChain), 
     layeredChain(ServiceChain, LChain),
     findall((P,F), (changingProperty(P,F), propertyExpectation(IntentId, P, _, _, _)), Properties),

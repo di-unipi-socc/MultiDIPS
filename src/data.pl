@@ -11,7 +11,7 @@
 /* INTENT MODEL (by user) */
 
 % intent(Stakeholder, IntentID, NUsers, TargetId).
-intent(gameAppOp, gsIntent, 3000, gamingService).
+%intent(gameAppOp, gsIntent, 3000, gamingService).
 
 
 % Changing property
@@ -129,8 +129,8 @@ vnf(edgeHomeBankingVF, edge, 8).
 vnf(cloudDPI, cloud, 25).
 vnf(cloudHomeBankingVF, cloud, 8).
 vnf(authVF, cloud, 2).             
-% vnf(encVF, edge, 2).             already declared
-% vnf(logVF, cloud, 1).            already declared
+% vnf(encVF, ...).             already declared
+% vnf(logVF, ...).             already declared
 
 
 % vnfXUser(Id, Version, UsersRange, HWReqs).
@@ -149,7 +149,7 @@ vnfXUser(authVF, s, (0, inf), (1,1,0)).
 /* INTENT MODEL (by user) */
 
 % intent(Stakeholder, IntentID, NUsers, TargetId).
-intent(cloudStorageOp, csIntent, 500, cloudStorageService).
+%intent(cloudStorageOp, csIntent, 500, cloudStorageService).
 
 
 % Changing property
@@ -177,4 +177,47 @@ vnf(authVF, edge, 2).
 % vnfXUser(Id, Version, UsersRange, HWReqs).
 vnfXUser(cloudStorageVF, s, (0, 250), (0,0,10)).
 vnfXUser(cloudStorageVF, l, (251, inf), (0,0,30)).
-% vnfXUser(authVF, s, (0, inf), 2).                 already declared
+% vnfXUser(authVF, ...).                 already declared
+
+
+
+/* INTENT NR. 5 */
+/* INTENT MODEL (by user) */
+
+% intent(Stakeholder, IntentID, NUsers, TargetId).
+%intent(smartRoadOp, srIntent, 10000, smartRoadService).
+
+
+% Changing property
+% propertyExpectation(IntentID, Property, Bound, From/Before, To/After).
+propertyExpectation(srIntent, caching, edge, _, edgeDataCollecting).
+
+
+% Non-changing property
+% propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
+propertyExpectation(srIntent, bandwidth, larger, hard, 5, megabps, start, edgeDataCollecting).
+propertyExpectation(srIntent, bandwidth, larger, hard, 10, megabps, edgeDataCollecting, cloudDataAnalysis).
+propertyExpectation(srIntent, bandwidth, larger, hard, 5, megabps, cloudDataAnalysis, end).
+
+
+/* PROVIDER/TARGET-DEPENDENT MODEL */
+
+% target(TargetId, Chain).
+target(smartRoadService, [edgeDataCollecting, cloudDataAnalysis]).
+
+
+% vnf(Id, Affinity, ProcessingTime).
+vnf(edgeDataCollecting, edge, 5).
+vnf(cloudDataAnalysis, cloud, 15).
+vnf(cacheVF, edge, 2).
+
+
+% vnfXUser(Id, Version, UsersRange, HWReqs).
+vnfXUser(edgeDataCollecting, s, (0, 2000), (2,2,0)).
+vnfXUser(edgeDataCollecting, m, (2001, 6000), (3,3,0)).
+vnfXUser(edgeDataCollecting, l, (6001, inf), (4,4,0)).
+vnfXUser(cloudDataAnalysis, s, (0, 5000), (8,5,5)).
+vnfXUser(cloudDataAnalysis, m, (5001, 15000), (12,7,9)).
+vnfXUser(cloudDataAnalysis, l, (15001, inf), (18,0,15)).
+vnfXUser(cacheVF, s, (0, 5000), (1,1,2)).  
+vnfXUser(cacheVF, m, (5001, inf), (1,1,4)).                

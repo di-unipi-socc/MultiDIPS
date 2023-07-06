@@ -12,7 +12,7 @@
 
 % Global intent
 % globalIntent(Property, Bound, Value, Unit)
-globalIntent(footprint, smaller, 1.570, kg).
+globalIntent(footprint, smaller, 2.000, kg).
 
 
 % changingProperty(Property, VF). 
@@ -55,58 +55,58 @@ price(cloud, (0.050, 0.050, 0.050)).
     % energyCost(Id, Cost(€/Kwh) ).
 
 node(gateway, edge, (4,3,3)).
-    totHW(gateway, (6,4,4)).
+    totHW(gateway, (5,4,4)).
     pue(gateway, 1.10).
-    ramEnergyProfile(gateway, L, E) :- E is 0.004 * L.
+    ramEnergyProfile(gateway, L, E) :- E is 0.005 * L.
     cpuEnergyProfile(gateway, L, E) :- E is 0.060 * L.
     storageEnergyProfile(gateway, L, E) :- E is 0.006 * L.
     energySourceMix(gateway, [(0.3,coal), (0.3,solar), (0.4,gas)]).
     energyCost(gateway, 0.22).
 
-node(edge1, edge, (8,4,3)).
-    totHW(edge1, (10,5,5)).
+node(edge1, edge, (10,7,4)).
+    totHW(edge1, (12,8,5)).
     pue(edge1, 1.15).
-    ramEnergyProfile(edge1, L, E) :- E is 0.009 * L.
-    cpuEnergyProfile(edge1, L, E) :- E is 0.090 * L.
+    ramEnergyProfile(edge1, L, E) :- E is 0.015 * L.
+    cpuEnergyProfile(edge1, L, E) :- E is 0.112 * L.
     storageEnergyProfile(edge1, L, E) :- E is 0.008 * L.
     energySourceMix(edge1, [(0.2,coal), (0.2,onshorewind), (0.6,solar)]).
     energyCost(edge1, 0.311).
 
-node(edge2, edge, (8,7,1)).
-    totHW(edge2, (8,7,1)).
+node(edge2, edge, (11,6,3)).
+    totHW(edge2, (16,8,5)).
     pue(edge2, 1.12).
-    ramEnergyProfile(edge2, L, E) :- E is 0.008 * L.
-    cpuEnergyProfile(edge2, L, E) :- E is 0.120 * L.
+    ramEnergyProfile(edge2, L, E) :- E is 0.023 * L.
+    cpuEnergyProfile(edge2, L, E) :- E is 0.150 * L.
     storageEnergyProfile(edge2, L, E) :- E is 0.006 * L.
     energySourceMix(edge2, [(0.1,gas), (0.8,coal), (0.1,offshorewind)]).
     energyCost(edge2, 0.129).
 
-node(edge3, edge, (6,5,4)).
-    totHW(edge3, (7,6,6)).
+node(edge3, edge, (12,6,6)).
+    totHW(edge3, (16,8,8)).
     pue(edge3, 1.14).
-    ramEnergyProfile(edge3, L, E) :- E is 0.009 * L.
-    cpuEnergyProfile(edge3, L, E) :- E is 0.115 * L.
-    storageEnergyProfile(edge3, L, E) :- E is 0.006 * L.
+    ramEnergyProfile(edge3, L, E) :- E is 0.025 * L.
+    cpuEnergyProfile(edge3, L, E) :- E is 0.145 * L.
+    storageEnergyProfile(edge3, L, E) :- E is 0.010 * L.
     energySourceMix(edge3, [(0.4,gas), (0.4,coal), (0.2,solar)]).
     energyCost(edge3, 0.252).
 
-node(cloud1, cloud, (96,48,45)).
+node(cloud1, cloud, (61,34,37)).
     totHW(cloud1, (100,50,50)).
     pue(cloud1, 1.25).
     ramEnergyProfile(cloud1, L, E) :- E is 0.130 * L.
     cpuEnergyProfile(cloud1, L, E) :- E is 0.410 * L.
     storageEnergyProfile(cloud1, L, E) :- E is 0.100 * L.
     energySourceMix(cloud1, [(0.5,solar), (0.1,gas), (0.4,coal)]).
-    energyCost(cloud1, 0.153).
+    energyCost(cloud1, 0.311).
 
-node(cloud2, cloud, (94,44,42)).
+node(cloud2, cloud, (59,33,36)).
     totHW(cloud2, (100,50,50)).
     pue(cloud2, 1.40).
     ramEnergyProfile(cloud2, L, E) :- E is 0.130 * L.
     cpuEnergyProfile(cloud2, L, E) :- E is 0.410 * L.
     storageEnergyProfile(cloud2, L, E) :- E is 0.100 * L.
     energySourceMix(cloud2, [(0.1,solar), (0.9,coal)]).
-    energyCost(cloud2, 0.311).
+    energyCost(cloud2, 0.153).
 
 
 % link(From, To, FeatLat, FeatBw).
