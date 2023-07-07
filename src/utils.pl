@@ -38,6 +38,12 @@ addedAfter([After|Zs], After, G, [After, G|Zs]) :- addedAfter(Zs, After, G, Zs).
 addedAfter([X|Zs], After, G, [X|NewZs]) :- dif(X, After), addedAfter(Zs, After, G, NewZs).
 addedAfter([], _, _, []).
 
+mergePlacements(OldInfo, Info, NewInfo) :-
+    OldInfo = info(OldPR, OldC, OldE, OldPs, OldAllocBW, OldU), Info = info(PR, C, E, P, AllocBW, U),
+    NewPR is OldPR + PR, NewC is OldC + C, NewE is OldE + E,
+    append(AllocBW, OldAllocBW, NewAllocBW),
+    NewInfo = info(NewPR, NewC, NewE, [P|OldPs], NewAllocBW, [U|OldU]).
+
 placementPath([on(_,_,N), on(_,_,M)|T], Path) :-
     placementPath([on(_,_,M)|T], TmpPath),
     Path = [(N,M)|TmpPath].
@@ -72,6 +78,20 @@ sumBW([(_,_,BWValue)|T], TotValue) :-
 sumBW([], 0).
 
 sumReqs((Ram1,CPU1,Storage1), (Ram2, CPU2, Storage2), (Ram1+Ram2, CPU1+CPU2, Storage1+Storage2)).
+
+nodeMinMax(Nodes, Min, Max) :-
+    findall(Cost, (member(N, Nodes), energyCost(N,Cost)), AllCost),
+    findall(Energy, (member(N, Nodes), nodeTotEnergy(N,Energy)), AllEnergy),
+    findall(Pue, (member(N, Nodes), pue(N, Pue)), AllPue),
+    findall(Emissions, emissions(_,Emissions), AllEmissions),
+    min_list(AllCost, MinCost), min_list(AllEnergy, MinEnergy), 
+    min_list(AllPue, MinPue), min_list(AllEmissions, MinEmissions),  
+    max_list(AllCost, MaxCost), max_list(AllEnergy, MaxEnergy), 
+    max_list(AllPue, MaxPue), max_list(AllEmissions, MaxEmissions),
+    Min = (MinCost, MinEnergy, MinPue, MinEmissions),
+    Max = (MaxCost, MaxEnergy, MaxPue, MaxEmissions).
+
+nodeTotEnergy(N, Energy) :- ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3), Energy is E1+E2+E3.
 
 extractIntent((_,_, X), X).
 

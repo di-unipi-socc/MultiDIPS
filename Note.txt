@@ -1,4 +1,3 @@
-/*
 0. clean up and extend code with triples 
     - energy model (e.g. based on RAM, CPU)
     - hw usage
@@ -13,15 +12,3 @@
 3'. MILP (14/06)
 3''. MILP vs Prolog
 3'''. Proposta TDR 
-*/
-
-
-/*
-go(Problem, BestSol, PBest) :-
-    solution(Problem, BestSol), profit(BestSol, PBest),
-    \+ (solution(Problem, Sol), dif(BestSol, Sol), profit(Sol,P), P > PBest).
-
-IDEE: 
-- globali -> anche resource usage medio?
-- keep intent id in the placement?
-*/

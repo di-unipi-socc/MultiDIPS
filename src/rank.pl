@@ -1,3 +1,5 @@
+:-['utils.pl'].
+
 %% INTENT  %%
 
 % First in - first served
@@ -29,19 +31,33 @@ rankIntent4(IntentList, _, OrderedIntentList) :- random_permutation(IntentList, 
 
 
 %% NODE  %%
+sortByAttributes(Nodes, SortedNodes) :- 
+    nodeMinMax(Nodes, Min, Max),
+    sortByAttributes(Nodes, Min, Max, [], SortedNodes).
 
-sortByAttributes([N|T], OldSortedNodes, SortedNodes) :- 
+sortByAttributes([N|T], Min, Max, OldSortedNodes, SortedNodes) :- 
+    Min = (MinCost, MinEnergy, MinPue, MinEmissions),
+    Max = (MaxCost, MaxEnergy, MaxPue, MaxEmissions),
     energyCost(N, Cost),
     energySourceMix(N, Sources),
     greenScore(Sources, GreenScore),
-    ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3), Energy is E1+E2+E3,
+    nodeTotEnergy(N, Energy),
     pue(N, Pue),
-    Weight is Cost/0.5*100 + Energy/1*100 + Pue/2*100 + GreenScore,
-    sortByAttributes(T, [(Weight, N)|OldSortedNodes], SortedNodes).
-sortByAttributes([], OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
+    normalizzation(Cost, MinCost, MaxCost, NormCost),
+    normalizzation(Energy, MinEnergy, MaxEnergy, NormEnergy),
+    normalizzation(Pue, MinPue, MaxPue, NormPue), 
+    normalizzation(GreenScore, MinEmissions, MaxEmissions, NormGreenScore),
+    Weight is NormCost*30 + NormEnergy*10 + NormPue*10 + NormGreenScore*50,
+    sortByAttributes(T, Min, Max, [(Weight, N)|OldSortedNodes], SortedNodes).
+sortByAttributes([], _, _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
 
 greenScore([(Prob, Src)|Srcs], GreenScore) :-
     greenScore(Srcs, TmpGreenScore),
     emissions(Src, Emissions),
-    GreenScore is TmpGreenScore + Prob * Emissions * 60.
+    GreenScore is TmpGreenScore + Prob * Emissions.
 greenScore([], 0).
+
+normalizzation(Value, MinValue, MaxValue, NormValue) :-
+    NormValue is (Value-MinValue)/(MaxValue-MinValue).
+
+% https://en.wikipedia.org/wiki/Feature_scaling#Rescaling_(min-max_normalization)
