@@ -18,7 +18,7 @@ propertyExpectation(gsIntent, logging, cloud, cloudGamingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, start, edgeGamingVF).               % one BW propertyExpectation for each chain services couple
+propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
 propertyExpectation(gsIntent, latency, smaller, hard, 55, ms, start, edgeGamingVF).
@@ -100,7 +100,7 @@ propertyExpectation(hbIntent, logging, cloud, cloudHomeBankingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(hbIntent, bandwidth, larger, hard, 5, megabps, start, edgeHomeBankingVF).               % una propertyExpectation di BW per ogni coppia di servizi della chain
+propertyExpectation(hbIntent, bandwidth, larger, hard, 5, megabps, start, edgeHomeBankingVF).              
 propertyExpectation(hbIntent, bandwidth, larger, hard, 10, megabps, edgeHomeBankingVF, cloudHomeBankingVF).
 propertyExpectation(hbIntent, bandwidth, larger, hard, 1, megabps, cloudHomeBankingVF, end).
 propertyExpectation(hbIntent, latency, smaller, soft, 190, ms, edgeHomeBankingVF, cloudHomeBankingVF).

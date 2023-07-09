@@ -49,9 +49,9 @@ placementPath([on(_,_,N), on(_,_,M)|T], Path) :-
     Path = [(N,M)|TmpPath].
 placementPath([on(_,_,_)],[]).
 
-findBW(IntentId, F, start, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _, _, NewBWValue, _, S, end), dif(F,S).
-findBW(IntentId, F, _, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _, _, NewBWValue, _, _, F).
-findBW(IntentId, F, LastBWValue, LastBWValue) :- dif(LastBWValue, start), \+ propertyExpectation(IntentId, bandwidth, _, _, _, _, _, F).
+findBW(IntentId, F, start, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _, S, end), dif(F,S).
+findBW(IntentId, F, _, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _,_, F).
+findBW(IntentId, F, LastBWValue, LastBWValue) :- dif(LastBWValue, start), \+ propertyExpectation(IntentId, bandwidth, _,_,_,_,_, F).
 
 findReqHW([F|Fs], NUsers, HWReqs) :-
     findReqHW(Fs, NUsers, FsReqs),
@@ -60,15 +60,16 @@ findReqHW([F|Fs], NUsers, HWReqs) :-
     sumReqs(FReqs, FsReqs, HWReqs).
 findReqHW([], _, (0,0,0)).
 
-allocatedHW([(_,P)|T], N, TotAllocHW) :-
+allocatedHW([(_, P)|T], N, TotAllocHW) :-
     allocatedHW(T, N, TmpAllocHW),
-    findall(HWReqs, (member(on(VNF, V, N), P), vnfXUser(VNF, V, _, HWReqs)), HWs), sumHWs(HWs, AllocHW),
+    findall(HWReqs, (member(on(VNF, V, N), P), vnfXUser(VNF, V, _, HWReqs)), HWs),
+    sumHWs(HWs, AllocHW),
     sumReqs(TmpAllocHW, AllocHW, TotAllocHW).
-allocatedHW([], _, (0,0,0)).
+allocatedHW([], _, (0, 0, 0)).
 
 sumHWs([(RamReq, CPUReq, StorageReq)|T], PAllocHW) :-
-    sumHWs(T, (AllocRam, AllocCPU, AllocStorage)),
-    Ram is RamReq+AllocRam, CPU is CPUReq+AllocCPU, Storage is StorageReq+AllocStorage,
+    sumHWs(T, (TmpRam, TmpCPU, TmpStorage)),
+    Ram is RamReq + TmpRam, CPU is CPUReq + TmpCPU, Storage is StorageReq + TmpStorage,
     PAllocHW = (Ram, CPU, Storage).
 sumHWs([], (0,0,0)).
 
@@ -95,6 +96,7 @@ nodeTotEnergy(N, Energy) :- ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E
 
 extractIntent((_,_, X), X).
 
+/*
 test(N, List, Out):-
     dif(N,0),
     multiDips(info(PR, C, E, _, _, _)),
@@ -108,3 +110,4 @@ addIf(List, V, NewList) :-
     NewList = [V|List].
 addIf(List, V, List) :-
     member(V, List).
+    */

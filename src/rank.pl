@@ -1,36 +1,52 @@
 :-['utils.pl'].
 
-%% INTENT  %%
+%% INTENT RANKING %%
 
 % First in - first served
 rankIntent1(OrderedIntentList, _, OrderedIntentList).
 
-% Shorter Chain. If Chains lengths are equals, minimum number of property
-rankIntent2([intent(StakeHolder, IID, NUsers, TId)|T], UnorderedIntentList, OrderedIntentList) :-       
-    target(TId, Chain), length(Chain, TmpChainLength),
-    findall(CProperty, propertyExpectation(IID, CProperty, _, _, _), CPList), length(CPList, NumCProperty),
-    ChainLength is TmpChainLength + NumCProperty,
-    findall(NCProperty, propertyExpectation(IID, NCProperty, _, _, _, _, _, _), NCPList), length(NCPList, NumNCProperty),
-    rankIntent2(T, [(ChainLength, NumNCProperty, intent(StakeHolder, IID, NUsers, TId))|UnorderedIntentList], OrderedIntentList).
-rankIntent2([], UnorderedIntentList, OrderedIntentList) :- 
-    sort(UnorderedIntentList, TmpOrderedIntentList), maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+% Shorter Chain first, if Chains lengths are equals, minimum number of property first.
+rankIntent2([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
+    Intent = intent(_, IId, _, TId),
+    target(TId, Chain),
+    length(Chain, NumChainF),
+    findall(CProperty, propertyExpectation(IId, CProperty, _,_,_), CPList),
+    length(CPList, NumCProperties),
+    ChainLength is NumChainF + NumCProperties,
+    findall(NCProperty, propertyExpectation(IId, NCProperty, _,_,_,_,_,_), NCPList),
+    length(NCPList, NumNCProperty),
+    rankIntent2(Is, [(ChainLength, NumNCProperty, Intent)|UnorderedIntentList], OrderedIntentList).
+
+rankIntent2([], UnorderedIntentList, OrderedIntentList) :-
+    sort(UnorderedIntentList, TmpOrderedIntentList),
+    maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
 
 % Intent with (estimated) higher resources needed first
-rankIntent3([intent(StakeHolder, IID, NUsers, TId)|T], UnorderedIntentList, OrderedIntentList) :- 
-    target(TId, Chain), findall(F, (member(F,Chain),vnf(F,_,_)), FilteredChain),
+rankIntent3([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
+    Level = _,
+    Intent = intent(_, IId, NUsers, TId),
+    target(TId, Chain),
+    filteredChain(Chain, Level, FilteredChain),
     findReqHW(FilteredChain, NUsers, ChainHW),
-    findall(F, (propertyExpectation(IID, Property, _,_,_), changingProperty(Property, F)), CProperty), findReqHW(CProperty, NUsers, CPropertyHW),
-    sumReqs(ChainHW, CPropertyHW, (Ram, CPU, Storage)),
-    HW is Ram+CPU+Storage,
-    rankIntent3(T, [(HW, 0, intent(StakeHolder, IID, NUsers, TId))|UnorderedIntentList], OrderedIntentList).
+    findall(F, filteredPropertiesF(IId, Level, F), CProperties),
+    findReqHW(CProperties, NUsers, CPropertiesHW),
+    sumReqs(ChainHW, CPropertiesHW, (Ram, CPU, Storage)),
+    HW is Ram + CPU + (Storage/100),
+    rankIntent3(Is, [(HW, 0, Intent)|UnorderedIntentList], OrderedIntentList).
+
 rankIntent3([], UnorderedIntentList, OrderedIntentList) :-
-    sort(1, @>=, UnorderedIntentList, TmpOrderedIntentList), maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+    sort(1, @>=, UnorderedIntentList, TmpOrderedIntentList),
+    maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+
+filteredChain(Chain, Level, FilteredChain) :- findall(F, (member(F, Chain),vnf(F, Level,_)), FilteredChain).
+
+filteredPropertiesF(IId, Level, F) :- propertyExpectation(IId, Property, Level, _,_), changingProperty(Property, F).
 
 % Random
 rankIntent4(IntentList, _, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
 
 
-%% NODE  %%
+%% NODE RANKING %%
 sortByAttributes(Nodes, SortedNodes) :- 
     nodeMinMax(Nodes, Min, Max),
     sortByAttributes(Nodes, Min, Max, [], SortedNodes).
@@ -39,10 +55,10 @@ sortByAttributes([N|T], Min, Max, OldSortedNodes, SortedNodes) :-
     Min = (MinCost, MinEnergy, MinPue, MinEmissions),
     Max = (MaxCost, MaxEnergy, MaxPue, MaxEmissions),
     energyCost(N, Cost),
-    energySourceMix(N, Sources),
-    greenScore(Sources, GreenScore),
     nodeTotEnergy(N, Energy),
+    energySourceMix(N, Sources),
     pue(N, Pue),
+    greenScore(Sources, GreenScore),
     normalizzation(Cost, MinCost, MaxCost, NormCost),
     normalizzation(Energy, MinEnergy, MaxEnergy, NormEnergy),
     normalizzation(Pue, MinPue, MaxPue, NormPue), 

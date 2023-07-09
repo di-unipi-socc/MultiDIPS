@@ -1,0 +1,22 @@
+{
+    "cloud": {
+        "totRamHW": {"lb": 256, "ub": 512},
+        "totCPUHW": {"lb": 36, "ub": 52},
+        "totStorageHW": {"lb": 8000, "ub": 14000},
+        "pue": {"lb": 1.10, "ub": 1.60},
+        "ramUnitkWh": {"lb": 0.00030, "ub": 0.00040},
+        "CPUUnitkWh": {"lb": 0.008, "ub": 0.011},   
+        "storageUnitkWh": {"lb": 0.0005, "ub": 0.0008},
+        "energyCost" : {"lb": 0.100, "ub": 0.500}              
+    },
+    "edge": {
+        "totRamHW": {"lb": 12, "ub": 48},
+        "totCPUHW": {"lb": 4, "ub": 14},
+        "totStorageHW": {"lb": 500, "ub": 2000},
+        "pue": {"lb": 1.05, "ub": 1.15},
+        "ramUnitkWh": {"lb": 0.00045, "ub": 0.00055},
+        "CPUUnitkWh": {"lb": 0.012, "ub": 0.015},   
+        "storageUnitkWh": {"lb": 0.0006, "ub": 0.001},
+        "energyCost" : {"lb": 0.100, "ub": 0.500}              
+    }
+}
