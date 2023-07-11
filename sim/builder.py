@@ -9,6 +9,7 @@ import numpy as np
 import parse as p
 import templates as t
 from numpy import random as rnd
+from enum import Enum
 
 LAT_MIN, LAT_MAX = 2, 40
 BW_MIN, BW_MAX = 100, 500
@@ -16,12 +17,18 @@ BW_MIN, BW_MAX = 100, 500
 EDGE_PRICE = (0.030, 0.060, 0.00050)
 CLOUD_PRICE = (0.015, 0.030, 0.00025)
 
+INFR_CHANGING_PROPERTIES = [('logging', 'logVF'), ('privacy', 'encVF'), ('security', 'authVF'), ('caching', 'cacheVF'), ('compression', 'compVF'), ('encoding', 'encodeVF')]
+
 GCI_VALUE = 0.475
 
-KWH_PER_MB_VALUE= 0.00008
+KWH_PER_MB_VALUE = 0.00008
+
+MAX_EMISSIONS_PER_NODE = 0.130
+
+MAX_ENERGY_PER_NODE = 0.200
 
 TYPES   = ['cloud', 'edge']
-PROBS   = [0.4, 0.6]
+PROBS   = [0.35, 0.65]
 
 DISC_PREDICATES = {'node': 3, 'totHW': 2, 'pue': 2, 'ramEnergyProfile': 3, 'cpuEnergyProfile': 3, 'storageEnergyProfile': 3, 'energySourceMix': 2, 'energyCost': 2}
 
@@ -38,17 +45,42 @@ PRICE = {'edge': (0.030, 0.060, 0.00050), 'cloud': (0.015, 0.030, 0.00025)}
 def get_random_sample(l, size=1):
 	return list(rnd.choice(l, size=size, replace=False))
 
-
 def generate_energy_mix():
-		# get 2 or 3 random energy sources
-		k = rnd.randint(2,4)
-		sources = get_random_sample(list(EMISSIONS.keys()), size=k)
-		probs = np.around(rnd.dirichlet(np.ones(k),size=1)[0], 2)
-		return [(p, s) for p, s in zip(probs, sources)]
+	# get 2 or 3 random energy sources
+	k = rnd.randint(2,4)
+	sources = get_random_sample(list(EMISSIONS.keys()), size=k)
+	probs = np.around(rnd.dirichlet(np.ones(k),size=1)[0], 2)
+	return [(p, s) for p, s in zip(probs, sources)]
 
 def trunc_range(x, mmin, mmax):
 	return max(min(x, mmax), mmin)
 
+
+class GlobalIntent():
+	def __init__(self, type: str, bound: str, value: float, unit: str):
+		self.type = type
+		self.bound = bound
+		self.value = value
+		self.unit = unit
+
+	def __str__(self):
+		return t.GLOBAL_INTENT.format(type=self.type, bound=self.bound, value=self.value, unit=self.unit)
+	
+	def __repr__(self):
+		return self.__str__()
+	
+
+class CProperty():
+	def __init__(self, property: str, vnf: str):
+		self.property = property
+		self.vnf = vnf
+
+	def __str__(self):
+		return t.INFR_CHANGING_PROPERTY.format(property=self.property,vnf=self.vnf)
+	
+	def __repr__(self):
+		return self.__str__()
+	
 
 class Node():
 	def __init__(self, nid: str = "", type: str = "", HWcaps: tuple = (0,0,0), 
@@ -100,10 +132,13 @@ class Link():
 
 
 class Infrastructure(nx.DiGraph):
-	def __init__(self, size=0, path=t.INFRS_DIR, seed=None):
+	def __init__(self, size=0, gintentType='footprint', path=t.INFRS_DIR, seed=None):
 		
 		super().__init__()
 		self._size = size
+		self.gintentType = gintentType
+		self.globalIntents = []
+		self.changingProperties = []
 		self.id = f"infr{self._size}"
 		self.file = join(path, f"{self.id}.pl")
 
@@ -112,6 +147,12 @@ class Infrastructure(nx.DiGraph):
 
 		rnd.seed(seed)
 
+	def add_gintent(self, gintent):
+		self.globalIntents.append(gintent)
+
+	def add_chaingingProperties(self, cproperty):
+		self.changingProperties.append(cproperty)
+
 	def add_node(self, node):
 		super().add_node(node.id, obj=node)
 
@@ -119,9 +160,19 @@ class Infrastructure(nx.DiGraph):
 		super().add_edge(link.source.id, link.dest.id, lat=link.lat, obj=link)
 
 	def generate(self):
+		self._generate_global_intent()
+		self._generate_cproperty()
 		self._generate_nodes()
 		self._generate_links()
 
+	def _generate_global_intent(self):
+		unit = "kg" if self.gintentType=='footprint' else "kWh"
+		value = self._size * MAX_EMISSIONS_PER_NODE if self.gintentType=='footprint' else self._size * MAX_ENERGY_PER_NODE
+		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=value, unit=unit))
+
+	def _generate_cproperty(self):
+		for prop,vnf in INFR_CHANGING_PROPERTIES:
+			self.add_chaingingProperties(CProperty(property=prop, vnf=vnf))
 
 	def _generate_nodes(self):
 		Ncloud = 1
@@ -176,20 +227,32 @@ class Infrastructure(nx.DiGraph):
 		"""
 	def _get_discontiguous(self):
 		return "\n".join(t.DISCONTIGUOUS.format(s, d) for s, d in DISC_PREDICATES.items())
+		
+	def _get_global_intents(self):
+		out=""
+		for i in self.globalIntents:
+			out += str(i) + "\n"
+		return out
 
+	def _get_changing_properties(self):
+		out=""
+		for i in self.changingProperties:
+			out += str(i) + "\n"
+		return out
+	
 	def _get_GCI(self):
-		return "\n" + t.GCI.format(value=GCI_VALUE)
+		return t.GCI.format(value=GCI_VALUE)
 	
 	def _get_kWhperMB(self):
-		return "\n" + t.KWH_PER_MB.format(value=KWH_PER_MB_VALUE)
+		return t.KWH_PER_MB.format(value=KWH_PER_MB_VALUE)
 	
 	def _get_price(self):
-		return "\n" + t.PRICE.format(type="edge", price=EDGE_PRICE) + "\n" + t.PRICE.format(type="cloud", price=CLOUD_PRICE)
+		return t.PRICE.format(type="edge", price=EDGE_PRICE) + "\n" + t.PRICE.format(type="cloud", price=CLOUD_PRICE)
 	
 	def _get_nodes(self):
 		nodes = list(n for _, n in self.nodes(data="obj"))
 		rnd.shuffle(nodes)
-		return "".join(str(n) for n in nodes)
+		return "\n".join(str(n) for n in nodes)
 	
 	def _get_links(self):
 		links = list(l for _,_,l in self.edges(data="obj"))
@@ -200,7 +263,9 @@ class Infrastructure(nx.DiGraph):
 		return "\n".join(t.EMISSION.format(s=s, p=p) for s, p in EMISSIONS.items())
 
 	def __str__(self):
-		out = self._get_infr_discontiguous() + "\n\n"
+		out = self._get_discontiguous() + "\n\n"
+		out += self._get_global_intents() + "\n\n"
+		out += self._get_changing_properties() + "\n\n"
 		out += self._get_emissions() + "\n\n"
 		out += self._get_kWhperMB() + "\n\n"
 		out += self._get_GCI() + "\n\n"
@@ -223,6 +288,8 @@ class Infrastructure(nx.DiGraph):
 				for i in range(len(lines)):
 					lines[i] = lines[i].strip()
 
+				self.parse_global_intent([i for i in lines if i.startswith("globalIntent(")])
+				self.parse_changing_properties([i for i in lines if i.startswith("changingProperty(")])
 				self.parse_nodes([i for i in lines if i.startswith("node(")])
 				self.parse_links([i for i in lines if i.startswith("link(")])
 				self.parse_tot_hws([i for i in lines if i.startswith("totHW(")])
@@ -232,8 +299,25 @@ class Infrastructure(nx.DiGraph):
 				self.parse_storage_energy_profiles([i for i in lines if i.startswith("storageEnergyProfile(")])
 				self.parse_energy_source_mixes([i for i in lines if i.startswith("energySourceMix(")])
 				self.parse_energy_cost([i for i in lines if i.startswith("energyCost(")])
-				
 
+
+	def parse_global_intent(self, gintents):
+		for gintent in gintents:
+			gintent = p.parse(t.GLOBAL_INTENT, gintent)
+			if gintent:
+				type= gintent["type"]
+				bound = gintent["bound"]
+				value = gintent["value"]
+				unit = gintent["unit"]
+				self.add_gintent(GlobalIntent(type=type, bound=bound, value=value, unit=unit))
+
+	def parse_changing_properties(self, cproperties):
+		for cproperty in cproperties:
+			cproperty = p.parse(t.INFR_CHANGING_PROPERTY, cproperty)
+			if cproperty:
+				property = cproperty["property"]
+				vnf = cproperty["vnf"]
+				self.add_chaingingProperties(CProperty(property=property, vnf=vnf))
 
 	def parse_nodes(self, nodes):
 		for n in nodes:
@@ -340,11 +424,12 @@ class Infrastructure(nx.DiGraph):
 
 @click.command()
 @click.argument("sizes", type=int, nargs=-1)
+@click.option("--gintent", "-g", type=click.Choice(['footprint', 'energy']), default='footprint', help="Type of cap in the global intent" )
 @click.option("--path", "-p", type=click.Path(exists=True, writable=True), default=t.INFRS_DIR, help="Directory path to save the infrastructure.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for random generator.")
-def main(sizes, path, seed):
+def main(sizes, gintent, path, seed):
 	for size in sizes:
-		infr = Infrastructure(size=size, path=path, seed=seed)
+		infr = Infrastructure(size=size, gintentType=gintent, path=path, seed=seed)
 		infr.generate()
 		infr.upload()
 		print(f"{infr.id} generated.")

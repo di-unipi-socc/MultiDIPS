@@ -66,7 +66,7 @@ class NonChangingProperty():
         return self.intentId == other.intentId and self.property==other.property and self.bound==other.bound and self.level==other.level and self.value==other.value and self.unit==other.unit and self.From==other.From and self.To==other.To
 
     def __str__(self):
-        out = t.CHANGING_PROPERTY.format(intentId=self.intentId, property=self.property, bound=self.bound, level=self.level,
+        out = t.NON_CHANGING_PROPERTY.format(intentId=self.intentId, property=self.property, bound=self.bound, level=self.level,
                                             value=self.value, unit=self.unit, From=self.From, To=self.To) 
         return out
     
@@ -132,15 +132,17 @@ class VnfXUsers():
 
 
 class Intents():
-    def __init__(self, size: int = 0, path: str = t.INTENTS_DIR):
-        self.size = size
+    def __init__(self, readPath: str, writePath: str, size: int = 0):
+        self._size = size
+        self.id = f"intents{self._size}.pl"
         self._intents: dict(str, Intent) = {}
         self._targets: dict(str, Target) = {}
         self._changingProperties: dict(str, List[ChangingProperty]) = {}
         self._nonChangingProperties: dict(str, List[NonChangingProperty]) = {}
         self._vnfs: dict(str, List[Vnf]) = {}
         self._vnfsXusers: dict(str, List[VnfXUsers]) = {}
-        self.file = path
+        self.fileRead = readPath
+        self.fileWrite = writePath
 
     def add_intent(self, intent: Intent):
         if intent.intentId not in self._intents:
@@ -235,7 +237,7 @@ class Intents():
 
     def __str__(self):
         out = self._get_discontiguous() + "\n"
-        for i in range(1, (self.size//5 +1)):
+        for i in range(1, (self._size//5 +1)):
             out += self._get_intents(i) +"\n"
             out += self._get_changingProperties(i) + "\n"
             out += self._get_nonChangingProperties(i) + "\n"
@@ -248,10 +250,10 @@ class Intents():
         return self.__str__()
     
     def parse(self):
-        if not exists(self.file):
-            raise FileNotFoundError(f"File {self.file} not found.")
+        if not exists(self.fileRead):
+            raise FileNotFoundError(f"File {self.fileRead} not found.")
         else:
-            with open(self.file, "r") as f:
+            with open(self.fileRead, "r") as f:
                 lines = f.read().splitlines()
 
                 for i in range(len(lines)):
@@ -281,7 +283,6 @@ class Intents():
     def parse_property(self, properties):
         for property in properties:
             NCproperty = p.parse(t.NON_CHANGING_PROPERTY, property)
-
             if NCproperty:
                 intentId = NCproperty["intentId"]        
                 property = NCproperty["property"]
@@ -346,21 +347,25 @@ class Intents():
                 raise t.ParseError(f"Error parsing application {vnfXusers}")
             
 
-    def upload(self, file=None):
-        file = self.file if not file else file
-        makedirs(dirname(file)) if not exists(dirname(file)) else None		
-        with open(file, "w+") as f:
+    def upload(self):
+        fileWrite = join(self.fileWrite, self.id)
+        makedirs(dirname(fileWrite)) if not exists(dirname(fileWrite)) else None		
+        with open(fileWrite, "w+") as f:
             f.write(str(self))
 
 @click.command()
 @click.argument("sizes", type=int, nargs=-1)
-@click.option("--path", "-p", type=click.Path(exists=True, writable=True), default=t.INTENTS_DIR, help="Directory path to save the intents.")
-def main(sizes, path):
+@click.option("--readpath", "-rp", type=click.Path(exists=True, writable=True), default=t.SRC_INTENT_DIR, help="Directory path to read the intents.")
+@click.option("--writepath", "-wp", type=click.Path(exists=True, writable=True), default=t.INTENTS_DIR, help="Directory path to write the intents.")
+def main(sizes, readpath, writepath):
     for size in sizes:
-        intents = Intents(size=size, path=path)
-        intents.parse() 
-        intents.upload(join(t.INTENTS_DIR, f"intents{size}.pl"))
-        print(f"{intents.size} intent generated.")
+        if size % 5 != 0:
+            print(str(size) + " is not a multiple of 5, skipped...")
+        else:
+            intents = Intents(size=size, readPath=readpath, writePath=writepath)
+            intents.parse() 
+            intents.upload()
+            print(f"{intents._size} intent generated.")
 
 
 if __name__ == "__main__":

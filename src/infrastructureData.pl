@@ -11,7 +11,7 @@
 
 % Global intent
 % globalIntent(Property, Bound, Value, Unit)
-globalIntent(footprint, smaller, 1.800, kg).
+globalIntent(footprint, smaller, 0.800, kg).
 
 % changingProperty(Property, VF). 
 %% changing properties defined according to priority order
