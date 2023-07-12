@@ -31,184 +31,184 @@ averageGCI(0.475).
 price(edge, (0.03, 0.06, 0.0005)).
 price(cloud, (0.015, 0.03, 0.00025)).
 
-node(edge2, edge, (25, 10, 1025)).
-	totHW(edge2, (26, 11, 1042)).
+node(edge5, edge, (27, 4, 1350)).
+	totHW(edge5, (34, 5, 1667)).
+	pue(edge5, 1.11).
+	energySourceMix(edge5, [(0.88,coal), (0.12,gas)]).
+	ramEnergyProfile(edge5, L, E) :- E is 0.017 * L.
+	cpuEnergyProfile(edge5, L, E) :- E is 0.06 * L.
+	storageEnergyProfile(edge5, L, E) :- E is 0.013 * L.
+	energyCost(edge5, 0.472).
+
+node(edge6, edge, (17, 4, 827)).
+	totHW(edge6, (24, 6, 1105)).
+	pue(edge6, 1.11).
+	energySourceMix(edge6, [(0.35,solar), (0.62,gas), (0.03,onshorewind)]).
+	ramEnergyProfile(edge6, L, E) :- E is 0.012 * L.
+	cpuEnergyProfile(edge6, L, E) :- E is 0.089 * L.
+	storageEnergyProfile(edge6, L, E) :- E is 0.01 * L.
+	energyCost(edge6, 0.201).
+
+node(edge4, edge, (34, 6, 1194)).
+	totHW(edge4, (45, 8, 1564)).
+	pue(edge4, 1.13).
+	energySourceMix(edge4, [(0.18,gas), (0.31,offshorewind), (0.52,solar)]).
+	ramEnergyProfile(edge4, L, E) :- E is 0.021 * L.
+	cpuEnergyProfile(edge4, L, E) :- E is 0.102 * L.
+	storageEnergyProfile(edge4, L, E) :- E is 0.01 * L.
+	energyCost(edge4, 0.158).
+
+node(edge3, edge, (22, 7, 911)).
+	totHW(edge3, (23, 8, 928)).
+	pue(edge3, 1.1).
+	energySourceMix(edge3, [(0.94,coal), (0.06,onshorewind)]).
+	ramEnergyProfile(edge3, L, E) :- E is 0.012 * L.
+	cpuEnergyProfile(edge3, L, E) :- E is 0.1 * L.
+	storageEnergyProfile(edge3, L, E) :- E is 0.006 * L.
+	energyCost(edge3, 0.322).
+
+node(cloud2, cloud, (399, 32, 9917)).
+	totHW(cloud2, (506, 41, 12547)).
+	pue(cloud2, 1.42).
+	energySourceMix(cloud2, [(0.0,solar), (1.0,gas)]).
+	ramEnergyProfile(cloud2, L, E) :- E is 0.171 * L.
+	cpuEnergyProfile(cloud2, L, E) :- E is 0.433 * L.
+	storageEnergyProfile(cloud2, L, E) :- E is 0.095 * L.
+	energyCost(cloud2, 0.423).
+
+node(edge1, edge, (28, 9, 1032)).
+	totHW(edge1, (31, 10, 1142)).
+	pue(edge1, 1.11).
+	energySourceMix(edge1, [(0.28,gas), (0.46,coal), (0.26,solar)]).
+	ramEnergyProfile(edge1, L, E) :- E is 0.016 * L.
+	cpuEnergyProfile(edge1, L, E) :- E is 0.124 * L.
+	storageEnergyProfile(edge1, L, E) :- E is 0.009 * L.
+	energyCost(edge1, 0.339).
+
+node(cloud1, cloud, (219, 30, 9577)).
+	totHW(cloud1, (285, 39, 12428)).
+	pue(cloud1, 1.36).
+	energySourceMix(cloud1, [(0.76,gas), (0.24,solar)]).
+	ramEnergyProfile(cloud1, L, E) :- E is 0.088 * L.
+	cpuEnergyProfile(cloud1, L, E) :- E is 0.39 * L.
+	storageEnergyProfile(cloud1, L, E) :- E is 0.083 * L.
+	energyCost(cloud1, 0.23).
+
+node(edge7, edge, (38, 4, 1465)).
+	totHW(edge7, (43, 5, 1628)).
+	pue(edge7, 1.1).
+	energySourceMix(edge7, [(0.85,onshorewind), (0.15,offshorewind)]).
+	ramEnergyProfile(edge7, L, E) :- E is 0.022 * L.
+	cpuEnergyProfile(edge7, L, E) :- E is 0.068 * L.
+	storageEnergyProfile(edge7, L, E) :- E is 0.011 * L.
+	energyCost(edge7, 0.423).
+
+node(edge2, edge, (18, 7, 1195)).
+	totHW(edge2, (25, 10, 1591)).
 	pue(edge2, 1.1).
-	energySourceMix(edge2, [(0.7,offshorewind), (0.24,onshorewind), (0.06,gas)]).
-	ramEnergyProfile(edge2, L, E) :- E is 0.014 * L.
-	cpuEnergyProfile(edge2, L, E) :- E is 0.161 * L.
-	storageEnergyProfile(edge2, L, E) :- E is 0.009 * L.
-	energyCost(edge2, 0.422).
+	energySourceMix(edge2, [(0.45,offshorewind), (0.09,solar), (0.46,onshorewind)]).
+	ramEnergyProfile(edge2, L, E) :- E is 0.013 * L.
+	cpuEnergyProfile(edge2, L, E) :- E is 0.137 * L.
+	storageEnergyProfile(edge2, L, E) :- E is 0.013 * L.
+	energyCost(edge2, 0.498).
 
-node(cloud1, cloud, (275, 36, 10741)).
-	totHW(cloud1, (324, 43, 12630)).
-	pue(cloud1, 1.23).
-	energySourceMix(cloud1, [(0.34,onshorewind), (0.4,gas), (0.26,coal)]).
-	ramEnergyProfile(cloud1, L, E) :- E is 0.116 * L.
-	cpuEnergyProfile(cloud1, L, E) :- E is 0.447 * L.
-	storageEnergyProfile(cloud1, L, E) :- E is 0.084 * L.
-	energyCost(cloud1, 0.322).
-
-node(cloud5, cloud, (328, 36, 10960)).
-	totHW(cloud5, (340, 38, 11329)).
-	pue(cloud5, 1.38).
-	energySourceMix(cloud5, [(0.17,solar), (0.25,offshorewind), (0.58,coal)]).
-	ramEnergyProfile(cloud5, L, E) :- E is 0.119 * L.
-	cpuEnergyProfile(cloud5, L, E) :- E is 0.394 * L.
-	storageEnergyProfile(cloud5, L, E) :- E is 0.078 * L.
-	energyCost(cloud5, 0.278).
-
-node(cloud2, cloud, (469, 33, 11055)).
-	totHW(cloud2, (498, 36, 11725)).
-	pue(cloud2, 1.51).
-	energySourceMix(cloud2, [(0.12,offshorewind), (0.05,coal), (0.83,gas)]).
-	ramEnergyProfile(cloud2, L, E) :- E is 0.165 * L.
-	cpuEnergyProfile(cloud2, L, E) :- E is 0.387 * L.
-	storageEnergyProfile(cloud2, L, E) :- E is 0.088 * L.
-	energyCost(cloud2, 0.474).
-
-node(cloud3, cloud, (420, 37, 11774)).
-	totHW(cloud3, (461, 41, 12898)).
-	pue(cloud3, 1.31).
-	energySourceMix(cloud3, [(0.52,offshorewind), (0.48,solar)]).
-	ramEnergyProfile(cloud3, L, E) :- E is 0.153 * L.
-	cpuEnergyProfile(cloud3, L, E) :- E is 0.352 * L.
-	storageEnergyProfile(cloud3, L, E) :- E is 0.091 * L.
-	energyCost(cloud3, 0.365).
-
-node(edge1, edge, (18, 9, 429)).
-	totHW(edge1, (23, 12, 529)).
-	pue(edge1, 1.14).
-	energySourceMix(edge1, [(0.71,coal), (0.22,offshorewind), (0.07,solar)]).
-	ramEnergyProfile(edge1, L, E) :- E is 0.011 * L.
-	cpuEnergyProfile(edge1, L, E) :- E is 0.172 * L.
-	storageEnergyProfile(edge1, L, E) :- E is 0.004 * L.
-	energyCost(edge1, 0.318).
-
-node(edge3, edge, (12, 6, 880)).
-	totHW(edge3, (16, 8, 1135)).
-	pue(edge3, 1.14).
-	energySourceMix(edge3, [(0.03,onshorewind), (0.43,offshorewind), (0.55,solar)]).
-	ramEnergyProfile(edge3, L, E) :- E is 0.009 * L.
-	cpuEnergyProfile(edge3, L, E) :- E is 0.101 * L.
-	storageEnergyProfile(edge3, L, E) :- E is 0.011 * L.
-	energyCost(edge3, 0.443).
-
-node(cloud4, cloud, (427, 44, 11806)).
-	totHW(cloud4, (431, 45, 11916)).
-	pue(cloud4, 1.57).
-	energySourceMix(cloud4, [(0.3,coal), (0.65,offshorewind), (0.05,gas)]).
-	ramEnergyProfile(cloud4, L, E) :- E is 0.133 * L.
-	cpuEnergyProfile(cloud4, L, E) :- E is 0.487 * L.
-	storageEnergyProfile(cloud4, L, E) :- E is 0.063 * L.
-	energyCost(cloud4, 0.393).
-
-node(edge4, edge, (21, 3, 627)).
-	totHW(edge4, (27, 5, 807)).
-	pue(edge4, 1.12).
-	energySourceMix(edge4, [(1.0,coal), (0.0,gas)]).
-	ramEnergyProfile(edge4, L, E) :- E is 0.014 * L.
-	cpuEnergyProfile(edge4, L, E) :- E is 0.074 * L.
-	storageEnergyProfile(edge4, L, E) :- E is 0.005 * L.
-	energyCost(edge4, 0.454).
-
-node(cloud6, cloud, (289, 35, 5988)).
-	totHW(cloud6, (404, 50, 8345)).
-	pue(cloud6, 1.48).
-	energySourceMix(cloud6, [(0.62,gas), (0.38,solar)]).
-	ramEnergyProfile(cloud6, L, E) :- E is 0.126 * L.
-	cpuEnergyProfile(cloud6, L, E) :- E is 0.55 * L.
-	storageEnergyProfile(cloud6, L, E) :- E is 0.063 * L.
-	energyCost(cloud6, 0.224).
+node(edge8, edge, (45, 8, 1378)).
+	totHW(edge8, (47, 9, 1434)).
+	pue(edge8, 1.13).
+	energySourceMix(edge8, [(0.61,onshorewind), (0.39,coal)]).
+	ramEnergyProfile(edge8, L, E) :- E is 0.025 * L.
+	cpuEnergyProfile(edge8, L, E) :- E is 0.132 * L.
+	storageEnergyProfile(edge8, L, E) :- E is 0.012 * L.
+	energyCost(edge8, 0.416).
 
 
-link(edge1, edge4, 3, 126).
-link(edge3, edge2, 21, 139).
-link(edge3, edge4, 37, 274).
-link(cloud3, cloud6, 21, 352).
-link(edge2, cloud4, 30, 377).
-link(edge1, cloud5, 24, 325).
-link(cloud2, edge2, 38, 329).
-link(cloud5, edge4, 14, 326).
-link(edge2, cloud6, 23, 372).
-link(edge1, cloud3, 23, 367).
-link(cloud1, cloud6, 20, 147).
-link(edge3, cloud4, 39, 314).
-link(edge3, cloud2, 23, 235).
-link(cloud4, edge1, 8, 488).
-link(cloud4, edge4, 16, 352).
-link(cloud5, edge1, 9, 257).
-link(cloud5, edge3, 13, 173).
-link(cloud1, edge1, 5, 329).
-link(edge4, cloud5, 34, 394).
-link(edge2, cloud1, 31, 113).
-link(cloud3, cloud5, 3, 324).
-link(edge2, cloud5, 29, 482).
-link(cloud4, cloud2, 10, 219).
-link(cloud4, cloud6, 15, 146).
-link(edge1, edge3, 3, 156).
-link(cloud5, cloud6, 13, 184).
-link(edge4, cloud2, 33, 458).
-link(cloud6, cloud2, 31, 278).
-link(cloud5, cloud3, 12, 122).
-link(cloud3, cloud2, 14, 461).
-link(cloud2, cloud4, 4, 338).
-link(edge3, cloud5, 4, 458).
-link(cloud6, edge4, 34, 375).
-link(cloud1, cloud4, 17, 278).
-link(cloud3, edge2, 13, 371).
-link(cloud2, cloud5, 16, 325).
-link(cloud6, edge1, 34, 104).
-link(edge1, cloud2, 11, 329).
-link(edge2, edge3, 29, 451).
-link(cloud6, edge3, 5, 446).
-link(cloud3, cloud1, 33, 410).
-link(cloud4, cloud1, 22, 172).
-link(cloud2, cloud1, 2, 378).
-link(edge4, cloud6, 13, 338).
-link(cloud1, cloud3, 5, 497).
-link(edge4, cloud1, 24, 499).
-link(cloud2, cloud3, 35, 459).
-link(edge2, cloud2, 25, 413).
-link(edge2, edge1, 17, 382).
-link(edge4, edge3, 11, 303).
-link(cloud6, edge2, 4, 390).
-link(cloud3, edge3, 6, 351).
-link(edge1, edge2, 4, 320).
-link(cloud1, edge4, 3, 430).
-link(cloud2, cloud6, 13, 201).
-link(cloud5, cloud4, 15, 103).
-link(cloud4, cloud3, 32, 140).
-link(cloud2, edge1, 6, 130).
-link(cloud1, cloud2, 28, 314).
-link(cloud6, cloud1, 18, 429).
-link(cloud3, edge1, 17, 440).
-link(edge1, cloud6, 12, 155).
-link(cloud3, edge4, 7, 225).
-link(cloud6, cloud3, 30, 419).
-link(edge1, cloud1, 24, 219).
-link(cloud3, cloud4, 29, 139).
-link(cloud6, cloud4, 6, 228).
-link(cloud4, cloud5, 18, 270).
-link(cloud1, edge2, 19, 174).
-link(cloud4, edge2, 25, 288).
-link(edge3, cloud1, 14, 163).
-link(edge2, edge4, 6, 217).
-link(edge1, cloud4, 19, 493).
-link(cloud2, edge3, 20, 422).
-link(cloud1, edge3, 36, 333).
-link(edge4, edge2, 11, 460).
-link(edge3, cloud6, 30, 368).
-link(cloud5, cloud1, 33, 261).
-link(edge3, edge1, 24, 373).
-link(edge4, edge1, 20, 333).
-link(cloud2, edge4, 22, 293).
-link(cloud1, cloud5, 25, 437).
-link(edge3, cloud3, 33, 103).
-link(edge2, cloud3, 24, 380).
-link(edge4, cloud4, 39, 234).
-link(cloud5, edge2, 15, 145).
-link(cloud6, cloud5, 22, 362).
-link(cloud5, cloud2, 25, 357).
-link(cloud4, edge3, 29, 260).
-link(edge4, cloud3, 25, 464).
+link(edge3, edge5, 28, 107).
+link(edge5, edge2, 6, 186).
+link(edge5, edge6, 35, 188).
+link(cloud2, edge7, 25, 411).
+link(cloud1, edge2, 5, 361).
+link(edge8, edge5, 25, 168).
+link(edge7, cloud2, 18, 486).
+link(edge2, edge3, 38, 240).
+link(edge8, edge1, 39, 460).
+link(edge8, cloud1, 15, 311).
+link(cloud2, edge1, 37, 291).
+link(edge2, edge8, 25, 238).
+link(edge3, edge1, 7, 372).
+link(edge3, cloud2, 26, 326).
+link(edge8, edge6, 34, 411).
+link(edge6, edge3, 19, 498).
+link(edge7, edge3, 30, 248).
+link(edge1, edge6, 30, 481).
+link(cloud2, edge8, 5, 228).
+link(edge8, edge7, 5, 301).
+link(edge4, cloud1, 33, 337).
+link(edge2, edge4, 27, 438).
+link(edge5, edge8, 6, 202).
+link(edge5, edge7, 15, 320).
+link(edge8, edge3, 26, 234).
+link(cloud2, edge2, 11, 495).
+link(cloud1, edge1, 5, 484).
+link(edge5, edge4, 28, 421).
+link(edge5, cloud2, 36, 441).
+link(edge3, cloud1, 23, 314).
+link(edge6, edge1, 38, 493).
+link(edge7, edge6, 2, 257).
+link(cloud1, cloud2, 37, 107).
+link(edge6, edge5, 39, 331).
+link(cloud1, edge3, 10, 112).
+link(edge2, cloud2, 23, 316).
+link(edge1, cloud2, 13, 134).
+link(edge4, edge7, 3, 198).
+link(edge1, edge7, 22, 297).
+link(edge2, edge6, 4, 286).
+link(edge7, edge5, 33, 488).
+link(edge4, edge1, 38, 374).
+link(edge6, cloud1, 2, 106).
+link(cloud1, edge5, 23, 309).
+link(edge1, edge4, 13, 304).
+link(edge3, edge6, 26, 241).
+link(cloud1, edge8, 31, 441).
+link(edge7, edge2, 34, 273).
+link(cloud2, edge5, 23, 277).
+link(edge6, edge2, 39, 268).
+link(edge5, cloud1, 33, 173).
+link(edge2, edge5, 4, 346).
+link(edge1, edge5, 14, 395).
+link(edge7, edge8, 2, 162).
+link(edge3, edge2, 20, 112).
+link(edge6, cloud2, 5, 338).
+link(edge4, cloud2, 16, 217).
+link(edge6, edge4, 17, 354).
+link(edge4, edge8, 5, 485).
+link(cloud2, edge3, 2, 360).
+link(edge7, cloud1, 3, 340).
+link(cloud2, edge4, 21, 334).
+link(edge5, edge3, 20, 383).
+link(edge3, edge4, 30, 492).
+link(edge8, cloud2, 39, 212).
+link(edge8, edge4, 31, 139).
+link(edge7, edge1, 34, 307).
+link(edge4, edge6, 2, 308).
+link(edge1, cloud1, 29, 395).
+link(cloud1, edge4, 27, 113).
+link(cloud1, edge6, 8, 273).
+link(cloud2, edge6, 11, 253).
+link(cloud1, edge7, 29, 304).
+link(edge4, edge2, 14, 163).
+link(edge5, edge1, 19, 164).
+link(edge2, cloud1, 13, 224).
+link(edge4, edge3, 16, 176).
+link(edge2, edge1, 19, 450).
+link(edge3, edge7, 3, 363).
+link(edge2, edge7, 25, 361).
+link(edge6, edge8, 29, 200).
+link(edge8, edge2, 3, 273).
+link(edge1, edge3, 20, 422).
+link(edge1, edge8, 34, 345).
+link(edge3, edge8, 14, 154).
+link(edge6, edge7, 7, 416).
+link(cloud2, cloud1, 36, 323).
+link(edge1, edge2, 6, 124).
+link(edge4, edge5, 15, 176).
+link(edge7, edge4, 3, 418).

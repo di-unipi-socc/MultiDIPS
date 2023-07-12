@@ -29,7 +29,7 @@ def groupby(df, field):
     return df
 
 
-def size_vs(field, df, ylabel=None, plot_type="lineplot", approach="exh"):
+def size_vs(field, df, ylabel=None, plot_type="lineplot", approach="md"):
     # set seaborn context
     sns.set(style="whitegrid")
     sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
@@ -69,13 +69,10 @@ if __name__ == '__main__':
     sizes = sorted(df['size'].unique())
     rates = sorted(df['rate'].unique())
 
-    df_exh = df[df['type'] == 'exhaustive']
-    df_cr = df[df['type'] == 'cr']
+    df_md = df[df['type'] == 'multiDips']
 
-    size_vs("time", df_exh, ylabel="Time (s)")
-    size_vs("time", df_cr, ylabel="Time (s)", approach="cr")
+    size_vs("time", df_md, ylabel="Time (s)")
 
-    size_vs("inferences", df_exh)
-    size_vs("inferences", df_cr, approach="cr")
+    size_vs("inferences", df_md)
 
     df_time = groupby(df, 'time')

@@ -8,15 +8,16 @@ ROOT_DIR = dirname(dirname(abspath(__file__)))
 SIM_DIR = join(ROOT_DIR, 'sim')
 INFRS_DIR = join(ROOT_DIR, 'data', 'infrs')
 INTENTS_DIR = join(ROOT_DIR, 'data', 'intents')
+SRC_INTENT_DIR = join(ROOT_DIR, 'src', 'intentsData.pl')
 COMMITS_DIR = join(SIM_DIR, 'commits')
 RESULTS_DIR = join(SIM_DIR, 'results')
 PLOTS_DIR = join(SIM_DIR, 'plots')
-SRC_INTENT_DIR = join(ROOT_DIR, 'src', 'intentsData.pl')
 
 VALUES_FILE = join(SIM_DIR, "values.json")
 SIM_PL_FILE = join(SIM_DIR, "sim.pl")
-RESULTS_FILE = join(RESULTS_DIR, "{intents}-{infr}-{timestamp}.csv")
+RESULTS_FILE = join(RESULTS_DIR, "{intents}-{infr}-{rate}-{timestamp}.csv")
 TMP_RES_FILE = join(RESULTS_DIR, "{intents}-{infr}-{timestamp}-tmp.csv")
+ALL_RESULTS = RESULTS_FILE.format(intents="*", infr="*", rate="*", timestamp="*")
 
 PLOT_FORMAT = "pdf"
 PLOT_PATH = join(PLOTS_DIR, "{name}." + PLOT_FORMAT)
@@ -81,7 +82,6 @@ def parse_energy_mix(s):
     return [(x.strip().split(',')[0], x.strip().split(',')[1]) for x in s[1:-1].split('), (')]
 
 def parse_prolog(query):
-    print(query, end="\n")
     if isinstance(query, dict):
         ans = {k:parse_prolog(v) for k,v in query.items()}
     elif isinstance(query, list):

@@ -9,10 +9,15 @@ import numpy as np
 import parse as p
 import templates as t
 from numpy import random as rnd
-from enum import Enum
+
+FAIL_PROB = 0.01
 
 LAT_MIN, LAT_MAX = 2, 40
 BW_MIN, BW_MAX = 100, 500
+
+VARIATION = {'hw': {'lb': 0.1, 'ub': 1.2},
+			'lat': {'lb': 0.3, 'ub': 1.5},
+			'bw': {'lb': 0.3, 'ub': 1.1}}
 
 EDGE_PRICE = (0.030, 0.060, 0.00050)
 CLOUD_PRICE = (0.015, 0.030, 0.00025)
@@ -85,10 +90,11 @@ class CProperty():
 class Node():
 	def __init__(self, nid: str = "", type: str = "", HWcaps: tuple = (0,0,0), 
 	      		 	   totHW: tuple = (0,0,0), ramkWh: float = 0.0, CPUkWh: float = 0.0, storagekWh: float = 0.0,
-					   pue: float = 0.0, energy_mix: list = [], energyCost: float = 0.0):
+					   pue: float = 0.0, energy_mix: list = [], energyCost: float = 0.0, fail_prob: float = FAIL_PROB):
 		self.id = nid
 		self.type = type
 		self.HWcaps = HWcaps
+		self.baseHWcaps: tuple = HWcaps
 		self.totHW = totHW
 		self.ramkWh = ramkWh
 		self.CPUkWh = CPUkWh
@@ -96,6 +102,21 @@ class Node():
 		self.pue = pue
 		self.mix = energy_mix
 		self.energyCost = energyCost
+		self.fail_prob = fail_prob
+
+	def fail(self):
+		return rnd.random() < self.fail_prob
+
+	def run(self, variation_rate, ramMax, cpuMax, storageMax):
+		if self.fail():
+			self.HWcaps = (0,0,0)
+		elif rnd.random() < variation_rate:
+			new_ramcap = min(round(rnd.uniform(self.baseHWcaps[0] * VARIATION["hw"]["lb"], self.baseHWcaps[0] * VARIATION["hw"]["ub"])), ramMax)
+			new_cpucap = min(round(rnd.uniform(self.baseHWcaps[1] * VARIATION["hw"]["lb"], self.baseHWcaps[1] * VARIATION["hw"]["ub"])), cpuMax)
+			new_storagecap = min(round(rnd.uniform(self.baseHWcaps[2] * VARIATION["hw"]["lb"], self.baseHWcaps[2] * VARIATION["hw"]["ub"])), storageMax)
+			self.HWcaps = (new_ramcap, new_cpucap, new_storagecap)
+			self.mix = generate_energy_mix()
+
 
 	def __str__(self):
 		d = self.__dict__.copy()
@@ -115,11 +136,28 @@ class Node():
 	
 	
 class Link():
-	def __init__(self, source: Node, dest: Node, lat: float, bw: float):
+	def __init__(self, source: Node, dest: Node, lat: float, bw: float, fail_prob: float = FAIL_PROB):
 		self.source = source
 		self.dest = dest
 		self.lat = lat
+		self.baseLat = lat
 		self.bw = bw
+		self.baseBw = bw
+		self.fail_prob = fail_prob
+
+	def fail(self):
+		return rnd.random() < self.fail_prob
+
+	def run(self, variation_rate):
+		if self.fail():
+			self.lat = 1000
+			self.bw  = 1
+		elif rnd.random() < variation_rate:
+			new_lat = round(rnd.uniform(self.baseLat * VARIATION["lat"]["lb"], self.baseLat * VARIATION["lat"]["ub"]), 4)
+			self.lat = trunc_range(new_lat, LAT_MIN, LAT_MAX)
+
+			new_bw  = max(1,round(rnd.uniform(self.baseBw * VARIATION["bw"]["lb"], self.baseBw * VARIATION["bw"]["ub"]), 4))
+			self.bw  = trunc_range(new_bw, BW_MIN, BW_MAX)
 
 	def __str__(self):
 		d = self.__dict__.copy()
@@ -167,7 +205,7 @@ class Infrastructure(nx.DiGraph):
 
 	def _generate_global_intent(self):
 		unit = "kg" if self.gintentType=='footprint' else "kWh"
-		value = self._size * MAX_EMISSIONS_PER_NODE if self.gintentType=='footprint' else self._size * MAX_ENERGY_PER_NODE
+		value = round(self._size * MAX_EMISSIONS_PER_NODE,3) if self.gintentType=='footprint' else round(self._size * MAX_ENERGY_PER_NODE,3)
 		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=value, unit=unit))
 
 	def _generate_cproperty(self):
@@ -178,7 +216,7 @@ class Infrastructure(nx.DiGraph):
 		Ncloud = 1
 		Nedge = 1
 		for i in range(self._size):
-			type 	= rnd.choice(TYPES, p=PROBS)
+			type = rnd.choice(TYPES, p=PROBS)
 			
 			if(type == 'edge'):
 				nid = type + str(Nedge) 
@@ -307,7 +345,7 @@ class Infrastructure(nx.DiGraph):
 			if gintent:
 				type= gintent["type"]
 				bound = gintent["bound"]
-				value = gintent["value"]
+				value = float(gintent["value"])
 				unit = gintent["unit"]
 				self.add_gintent(GlobalIntent(type=type, bound=bound, value=value, unit=unit))
 
@@ -325,7 +363,7 @@ class Infrastructure(nx.DiGraph):
 			if node:
 				nid = node["id"]
 				type = node["type"]
-				HWcaps = node["HWcaps"]
+				HWcaps = eval(node["HWcaps"])
 				self.add_node(Node(nid=nid, type=type, HWcaps=HWcaps))
 			else:
 				raise t.ParseError(f"Node {n} not valid.")
@@ -352,7 +390,7 @@ class Infrastructure(nx.DiGraph):
 		for hw in tothws:
 			hw = p.parse(t.TOT_HW, hw)
 			if hw:
-				self.nodes[hw["id"]]["obj"].totHW = hw["totHW"]
+				self.nodes[hw["id"]]["obj"].totHW = eval(hw["totHW"])
 			else:
 				raise t.ParseError(f"Total HW {hw} not valid.")
 
@@ -408,6 +446,11 @@ class Infrastructure(nx.DiGraph):
 				self.nodes[cost["id"]]["obj"].energyCost = float(cost["energyCost"])
 			else:
 				raise t.ParseError(f"Energy cost {cost} not valid.")
+			
+
+	def run(self, variation_rate):
+		[n.run(variation_rate, ramMax=self._values[n.type]['totRamHW']['ub'], cpuMax=self._values[n.type]['totCPUHW']['ub'], storageMax=self._values[n.type]['totStorageHW']['ub']) for _, n in self.nodes(data="obj")]
+		[l.run(variation_rate) for _,_,l in self.edges(data="obj")]
 
 	def reset(self):
 		reset_file = join(t.INFRS_DIR, f"{self.id}.pl")

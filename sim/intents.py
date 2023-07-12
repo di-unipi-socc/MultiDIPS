@@ -142,7 +142,7 @@ class Intents():
         self._vnfs: dict(str, List[Vnf]) = {}
         self._vnfsXusers: dict(str, List[VnfXUsers]) = {}
         self.fileRead = readPath
-        self.fileWrite = writePath
+        self.fileWrite = join(writePath, f"{self.id}")
 
     def add_intent(self, intent: Intent):
         if intent.intentId not in self._intents:
@@ -196,7 +196,7 @@ class Intents():
             out += str(sCopy)+"\n"
         return out
     
-    def _get_targets(self, num):
+    def _get_targets(self):
         return "\n".join([str(s) for s in self._targets.values()])+"\n"
     
     def _get_changingProperties(self, num):
@@ -241,7 +241,7 @@ class Intents():
             out += self._get_intents(i) +"\n"
             out += self._get_changingProperties(i) + "\n"
             out += self._get_nonChangingProperties(i) + "\n"
-        out += self._get_targets(i) + "\n"
+        out += self._get_targets() + "\n"
         out += self._get_vnfs() + "\n"
         out += self._get_vnfsXusers() + "\n"
         return out
@@ -348,9 +348,8 @@ class Intents():
             
 
     def upload(self):
-        fileWrite = join(self.fileWrite, self.id)
-        makedirs(dirname(fileWrite)) if not exists(dirname(fileWrite)) else None		
-        with open(fileWrite, "w+") as f:
+        makedirs(dirname(self.fileWrite)) if not exists(dirname(self.fileWrite)) else None		
+        with open(self.fileWrite, "w+") as f:
             f.write(str(self))
 
 @click.command()
@@ -360,7 +359,7 @@ class Intents():
 def main(sizes, readpath, writepath):
     for size in sizes:
         if size % 5 != 0:
-            print(str(size) + " is not a multiple of 5, skipped...")
+            print(str(size) + " is not a multiple of 5. Size must be a multiple of 5.")
         else:
             intents = Intents(size=size, readPath=readpath, writePath=writepath)
             intents.parse() 

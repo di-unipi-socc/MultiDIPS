@@ -48,6 +48,49 @@ propertyExpectation(srIntent1, bandwidth, larger, hard, 5, megabps, start, edgeD
 propertyExpectation(srIntent1, bandwidth, larger, hard, 10, megabps, edgeDataCollecting, cloudDataAnalysis).
 propertyExpectation(srIntent1, bandwidth, larger, hard, 5, megabps, cloudDataAnalysis, end).
 
+intent(gameAppOp2, gsIntent2, 3000, gamingService).
+intent(streamAppOp2, ssIntent2, 2000, streamingService).
+intent(homeBankingOp2, hbIntent2, 5000, homeBankingService).
+intent(cloudStorageOp2, csIntent2, 500, cloudStorageService).
+intent(smartRoadOp2, srIntent2, 10000, smartRoadService).
+
+
+propertyExpectation(gsIntent2, privacy, edge, _, _).
+propertyExpectation(gsIntent2, logging, cloud, cloudGamingVF, _).
+
+propertyExpectation(ssIntent2, compression, cloud, cloudStreamingVF, _).
+
+propertyExpectation(hbIntent2, privacy, edge, _, _).
+propertyExpectation(hbIntent2, security, cloud, cloudHomeBankingVF, _).
+propertyExpectation(hbIntent2, logging, cloud, cloudHomeBankingVF, _).
+
+propertyExpectation(csIntent2, security, edge, cloudStorageVF, _).
+
+propertyExpectation(srIntent2, caching, edge, _, edgeDataCollecting).
+
+
+propertyExpectation(gsIntent2, bandwidth, larger, hard, 20, megabps, start, edgeGamingVF).
+propertyExpectation(gsIntent2, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
+propertyExpectation(gsIntent2, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
+propertyExpectation(gsIntent2, latency, smaller, hard, 55, ms, start, edgeGamingVF).
+
+propertyExpectation(ssIntent2, bandwidth, larger, hard, 20, megabps, start, edgeStreamingVF).
+propertyExpectation(ssIntent2, bandwidth, larger, hard, 60, megabps, edgeStreamingVF, cloudStreamingVF).
+propertyExpectation(ssIntent2, bandwidth, larger, hard, 1, megabps, cloudStreamingVF, end).
+propertyExpectation(ssIntent2, latency, smaller, soft, 30, ms, start, edgeStreamingVF).
+
+propertyExpectation(hbIntent2, bandwidth, larger, hard, 5, megabps, start, edgeHomeBankingVF).
+propertyExpectation(hbIntent2, bandwidth, larger, hard, 10, megabps, edgeHomeBankingVF, cloudHomeBankingVF).
+propertyExpectation(hbIntent2, bandwidth, larger, hard, 1, megabps, cloudHomeBankingVF, end).
+propertyExpectation(hbIntent2, latency, smaller, soft, 190, ms, edgeHomeBankingVF, cloudHomeBankingVF).
+
+propertyExpectation(csIntent2, bandwidth, larger, hard, 15, megabps, start, cloudStorageVF).
+propertyExpectation(csIntent2, bandwidth, larger, hard, 15, megabps, cloudStorageVF, end).
+
+propertyExpectation(srIntent2, bandwidth, larger, hard, 5, megabps, start, edgeDataCollecting).
+propertyExpectation(srIntent2, bandwidth, larger, hard, 10, megabps, edgeDataCollecting, cloudDataAnalysis).
+propertyExpectation(srIntent2, bandwidth, larger, hard, 5, megabps, cloudDataAnalysis, end).
+
 target(gamingService, [edgeGamingVF, cloudGamingVF]).
 target(streamingService, [edgeStreamingVF, cloudStreamingVF]).
 target(homeBankingService, [edgeHomeBankingVF, cloudDPI, cloudHomeBankingVF]).
