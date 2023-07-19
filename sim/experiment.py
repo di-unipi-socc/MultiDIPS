@@ -45,6 +45,7 @@ class Result():
         self.energy = 0
         self.carbon = 0
         self.placement = []
+        self.failedP = 0
         self.allocbw = []
         self.unsatprops = []
         self.inferences = 0
@@ -62,6 +63,9 @@ class Result():
     def get_placement(self):
         return self.placement
     
+    def get_failedP(self):
+        return self.failedP
+    
     def get_allocbw(self):
         return self.allocbw     
     
@@ -73,11 +77,19 @@ class Result():
         self.energy     = res["Energy"]
         self.carbon     = res["Carbon"]
         self.placement  = res["Placement"]
+        self.failedP    = self.countFail()
         self.allocbw    = res["AllocBW"]
         self.unsatprops = res["UnsatProps"]
 
         self.inferences = int(res["Infs"])
         self.time       = round(float(res["Time"]), 6)
+
+    def countFail(self):
+        tot = 0
+        for l in self.placement:
+            if l[1]==[]: 
+                tot+=1
+        return tot
 
     def pretty_print(self):
         return tbl([['ID', self.id],
@@ -85,6 +97,7 @@ class Result():
                     ["Profit", self.profit], ["Enegy", self.energy],
                     ["Carbon", self.carbon],
                     ["Placement", self.placement],
+                    ["NumFailP", self.failedP],
                     ["AllocBW", self.allocbw],
                     ["UnsatProps", self.unsatprops]],
                     headers=["Metric", "Value"])
@@ -115,6 +128,7 @@ class Experiment():
         if results:
             results = pd.DataFrame.from_records([r.__dict__ for r in results], index="id")
             [results.pop(f) for f in ['placement', 'allocbw']]
+            results["numIntents"] = self.intents._size
             results["size"] = self.infr._size
             results["rate"] = self.variation_rate
             df_to_file(results, file)
@@ -157,14 +171,14 @@ class Experiment():
 
             
 @click.command()
-@click.argument("infr_size", type=int, nargs=1)
 @click.argument("intents_size", type=int, nargs=1)
+@click.argument("infr_size", type=int, nargs=1)
 @click.argument('variation_rate', type=float, default=0.1)
-@click.option('--epochs', '-e', type=int, default=600, help="Number of epochs to run the experiment.")
+@click.option('--epochs', '-e', type=int, default=500, help="Number of epochs to run the experiment.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for the random number generator.")
 @click.option("--timeout", "-t", type=int, default=TIMEOUT, help="Timeout for each test.")
 
-def main(infr_size, intents_size, variation_rate, epochs, seed, timeout):
+def main(intents_size, infr_size, variation_rate, epochs, seed, timeout):
     """ Start an experiment with an infrastructure of SIZE nodes and itentsSize number of intent."""
     with TemporaryDirectory() as tmpdir:
         print(f"Temporary directory: {tmpdir}")
@@ -172,6 +186,15 @@ def main(infr_size, intents_size, variation_rate, epochs, seed, timeout):
         print(tbl([["Infrastructure Size", infr_size], ["Number of intent", intents_size], 
                     ["Variation rate", variation_rate], ["Epochs", epochs],
                     ["Timeout", timeout]], tablefmt="fancy_grid"))
+
+        intents = Intents(size=intents_size, readPath=t.SRC_INTENT_DIR, writePath=tmpdir)
+        intents_file = join(t.INTENTS_DIR, f"intents{intents_size}.pl")
+
+        intents.parse()
+        intents.upload()
+        if not exists(intents_file):
+            copyfile(intents.fileWrite, intents_file)
+
 
         infr = Infrastructure(size=infr_size, seed=seed, path=tmpdir)
         infr_file = join(t.INFRS_DIR, f"infr{infr_size}.pl")
@@ -184,12 +207,6 @@ def main(infr_size, intents_size, variation_rate, epochs, seed, timeout):
             infr.upload()
             copyfile(infr.file, infr_file)
 
-        intents = Intents(size=intents_size, readPath=t.SRC_INTENT_DIR, writePath=tmpdir)
-        intents_file = join(t.INTENTS_DIR, f"intents{intents_size}.pl")
-        intents.parse()
-        intents.upload()
-        if not exists(intents_file):
-            copyfile(intents.fileWrite, intents_file)
         
         exp = Experiment(infr=infr, intents=intents, epochs=epochs, timeout=timeout, variation_rate=variation_rate)
         # atexit.register(exp.upload, file=t.TMP_RES_FILE.format(app=exp.app, infr=exp.infr.id, rate=exp.variation_rate, timestamp=t.TIMESTAMP))

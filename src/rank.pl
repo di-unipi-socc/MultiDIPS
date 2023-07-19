@@ -1,5 +1,9 @@
 :-['utils.pl'].
 
+weigth(cost, 32).
+weigth(energy, 18).
+weigth(emissions, 50).
+
 %% INTENT RANKING %%
 
 % First in - first served
@@ -52,28 +56,36 @@ sortByAttributes(Nodes, SortedNodes) :-
     sortByAttributes(Nodes, Min, Max, [], SortedNodes).
 
 sortByAttributes([N|T], Min, Max, OldSortedNodes, SortedNodes) :- 
-    Min = (MinCost, MinEnergy, MinPue, MinEmissions),
-    Max = (MaxCost, MaxEnergy, MaxPue, MaxEmissions),
     energyCost(N, Cost),
-    nodeTotEnergy(N, Energy),
+    nodeUnitEnergy(N, Energy),
     energySourceMix(N, Sources),
-    pue(N, Pue),
-    greenScore(Sources, GreenScore),
-    normalizzation(Cost, MinCost, MaxCost, NormCost),
-    normalizzation(Energy, MinEnergy, MaxEnergy, NormEnergy),
-    normalizzation(Pue, MinPue, MaxPue, NormPue), 
-    normalizzation(GreenScore, MinEmissions, MaxEmissions, NormGreenScore),
-    Weight is NormCost*30 + NormEnergy*10 + NormPue*10 + NormGreenScore*50,
-    sortByAttributes(T, Min, Max, [(Weight, N)|OldSortedNodes], SortedNodes).
+    nodeEmissions(Sources, NodeEmissions),
+    rank((Cost, Energy, NodeEmissions), Min, Max, Rank),
+    sortByAttributes(T, Min, Max, [(Rank, N)|OldSortedNodes], SortedNodes).
 sortByAttributes([], _, _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
 
-greenScore([(Prob, Src)|Srcs], GreenScore) :-
-    greenScore(Srcs, TmpGreenScore),
+nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
+    nodeEmissions(Srcs, TmpNodeEmissions),
     emissions(Src, Emissions),
-    GreenScore is TmpGreenScore + Prob * Emissions.
-greenScore([], 0).
+    NodeEmissions is TmpNodeEmissions + Prob * Emissions.
+nodeEmissions([], 0).
 
-normalizzation(Value, MinValue, MaxValue, NormValue) :-
+rank(Values, Min, Max, Rank) :-
+    normalizedValues(Values, Min, Max, (NormCost, NormEnergy, NormEmissions)),
+    weigth(cost, WeigthC), weigth(energy, WeigthEn), weigth(emissions, WeigthEm),
+    Rank is NormCost*WeigthC + NormEnergy*WeigthEn + NormEmissions*WeigthEm.
+
+normalizedValues(Values, Min, Max, NValues) :-
+    Values = (Cost, Energy, NodeEmissions),
+    Min = (MinCost, MinEnergy, MinEmissions), Max = (MaxCost, MaxEnergy, MaxEmissions),
+    normalization(Cost, MinCost, MaxCost, NormCost),
+    normalization(Energy, MinEnergy, MaxEnergy, NormEnergy),
+    normalization(NodeEmissions, MinEmissions, MaxEmissions, NormEmissions),
+    NValues = (NormCost, NormEnergy, NormEmissions).
+
+normalization(Value, MinValue, MaxValue, NormValue) :-
     NormValue is (Value-MinValue)/(MaxValue-MinValue).
+
+
 
 % https://en.wikipedia.org/wiki/Feature_scaling#Rescaling_(min-max_normalization)

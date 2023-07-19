@@ -82,32 +82,26 @@ sumReqs((Ram1,CPU1,Storage1), (Ram2, CPU2, Storage2), (Ram1+Ram2, CPU1+CPU2, Sto
 
 nodeMinMax(Nodes, Min, Max) :-
     findall(Cost, (member(N, Nodes), energyCost(N,Cost)), AllCost),
-    findall(Energy, (member(N, Nodes), nodeTotEnergy(N,Energy)), AllEnergy),
-    findall(Pue, (member(N, Nodes), pue(N, Pue)), AllPue),
+    findall(Energy, (member(N, Nodes), nodeUnitEnergy(N, Energy)), AllEnergy),
     findall(Emissions, emissions(_,Emissions), AllEmissions),
     min_list(AllCost, MinCost), min_list(AllEnergy, MinEnergy), 
-    min_list(AllPue, MinPue), min_list(AllEmissions, MinEmissions),  
+    min_list(AllEmissions, MinEmissions),  
     max_list(AllCost, MaxCost), max_list(AllEnergy, MaxEnergy), 
-    max_list(AllPue, MaxPue), max_list(AllEmissions, MaxEmissions),
-    Min = (MinCost, MinEnergy, MinPue, MinEmissions),
-    Max = (MaxCost, MaxEnergy, MaxPue, MaxEmissions).
-
-nodeTotEnergy(N, Energy) :- ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3), Energy is E1+E2+E3.
-
-extractIntent((_,_, X), X).
+    max_list(AllEmissions, MaxEmissions),
+    Min = (MinCost, MinEnergy, MinEmissions),
+    Max = (MaxCost, MaxEnergy, MaxEmissions).
 
 /*
-test(N, List, Out):-
-    dif(N,0),
-    multiDips(info(PR, C, E, _, _, _)),
-    addIf(List, (PR, C, E), NewList),
-    NewN is N-1,
-    test(NewN, NewList, Out).
-test(0, List, Out) :- sort(List, Out).
+nodeTotEnergy(N, Energy) :-
+    pue(N, Pue),
+    ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3),
+    Energy is (E1+E2+E3)*Pue.
+*/
 
-addIf(List, V, NewList) :-
-    \+ member(V, List),
-    NewList = [V|List].
-addIf(List, V, List) :-
-    member(V, List).
-    */
+nodeUnitEnergy(N, Energy) :-
+    totHW(N,(Ram, Cpu, Storage)),
+    pue(N, Pue),
+    ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3),
+    Energy is (E1/Ram + E2/Cpu + E3/Storage) * Pue.
+
+extractIntent((_,_, X), X).

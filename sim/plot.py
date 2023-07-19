@@ -37,12 +37,12 @@ def size_vs(field, df, ylabel=None, plot_type="lineplot", approach="md"):
     # choose plot
     plt.figure(figsize=(10, 6))
     if plot_type == "lineplot":
-        sns.lineplot(x="size", y=field, data=df, style="rate", hue="rate", errorbar=("sd", 0.1),
+        sns.lineplot(x="size", y=field, data=df, style="size", hue="size", errorbar=("sd", 0.1),
                      markers=True, palette=PALETTE)
         #plt.xticks(x, sizes)
     else:
-        sns.barplot(x="size", y=field, data=df, style="rate", hue="rate", palette=PALETTE)
-        plt.xticks(x, sizes)
+        sns.barplot(x="size", y=field, data=df, palette=PALETTE)
+        #plt.xticks(x, sizes)
     
     # set labels and y-scale
     plt.xlabel("Infrastructure Size")
