@@ -1,4 +1,4 @@
-:-['src/properties.pl','src/rank.pl']. 
+:-['src/properties.pl','src/rank.pl','src/utils.pl']. 
 :- ['src/infrastructureData.pl','src/intentsData.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
@@ -48,14 +48,13 @@ dimensionedChain([], _, Chain, Chain).
 
 placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
     findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, SortedNodes),                   
-    placedChain(DimChain, IntentId, OldPs, SortedNodes, start, start, [], [], AllocBW, P).
-placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, LastNode, LastBWValue, OldAllocBW, OldP, AllocBW, NewP) :-
+    placedChain(DimChain, IntentId, OldPs, SortedNodes, [], [], AllocBW, P).
+placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, OldAllocBW, OldP, AllocBW, NewP) :-
     vnfXUser(F, D, _, HWReqs), member((_,N), SortedNodes), node(N, L, HWCaps),
     hwOK(N, HWReqs, HWCaps, [(IntentId, OldP)|OldPs]),
-    findBW(IntentId, F, LastBWValue, NewBWValue),
-    nodeToNodeBW(N, LastNode, LastBWValue, OldAllocBW, TmpAllocBW),
-    placedChain(VNFs, IntentId, OldPs, SortedNodes, N, NewBWValue, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
-placedChain([], _, _, _, _, _, AllocBW, NewP, AllocBW, NewP).
+    nodeToNodeBW(IntentId, N, OldP, OldAllocBW, TmpAllocBW),
+    placedChain(VNFs, IntentId, OldPs, SortedNodes, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
+placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
 
 hwOK(N, HWReqs, HWCaps, OldPs) :-
     HWReqs = (RamReq, CPUReq, StorageReq),
@@ -63,15 +62,11 @@ hwOK(N, HWReqs, HWCaps, OldPs) :-
     allocatedHW(OldPs, N, (AllocRam, AllocCPU, AllocStorage)),
     RamReq + AllocRam =< RamCap, CPUReq + AllocCPU =< CPUCap, StorageReq + AllocStorage =< StorageCap.
 
-nodeToNodeBW(_, start, _, NewAllocBW, NewAllocBW).
-nodeToNodeBW(N, M, BWValue, OldAllocBW, [(N, M, BWValue)|OldAllocBW]) :- dif(M, start), dif(N,M). 
-nodeToNodeBW(N, N, _, NewAllocBW, NewAllocBW). 
-
 calculateHWInfo([on(F, D, N)|T], TotHWEnergy, TotHWCarbon, TotProfit):-
     calculateHWInfo(T, TmpHWEnergy, TmpHWCarbon, TmpProfit),
     energySourceMix(N, Sources),
     calculateEnergy(on(F, D, N), HWEnergy),
-    carbon(Sources, HWEnergy, HWCarbon),
+    calculateHWCarbon(Sources, HWEnergy, HWCarbon),
     calculateProfit(on(F, D, N), HWEnergy, Profit),
     TotHWEnergy is TmpHWEnergy + HWEnergy, TotHWCarbon is TmpHWCarbon + HWCarbon, TotProfit is TmpProfit + Profit.
 calculateHWInfo([], 0, 0, 0).
@@ -80,17 +75,17 @@ calculateEnergy(on(F, D, N), HWEnergy) :-
     vnfXUser(F, D, _, (Ram, CPU, Storage)),
     totHW(N, (TotRam, TotCPU, TotStorage)),
     pue(N, PUE),
-    RamLInc is Ram / TotRam, ramEnergyProfile(N, RamLInc, RamE), 
-    CPULInc is CPU / TotCPU, cpuEnergyProfile(N, CPULInc, CPUE),
-    StorageLInc is Storage / TotStorage, storageEnergyProfile(N, StorageLInc, StorageE),
-    HWEnergy is (RamE + CPUE + StorageE) * PUE.
+    RamLInc is Ram / TotRam, ramEnergyProfile(N, RamLInc, RamEn), 
+    CPULInc is CPU / TotCPU, cpuEnergyProfile(N, CPULInc, CPUEn),
+    StorageLInc is Storage / TotStorage, storageEnergyProfile(N, StorageLInc, StorageEn),
+    HWEnergy is (RamEn + CPUEn + StorageEn) * PUE.
 
-carbon([(Prob, Src)|Srcs], HWEnergy, HWCarbon) :-
-    carbon(Srcs, HWEnergy, SrcsCarbon),
+calculateHWCarbon([(Prob, Src)|Srcs], HWEnergy, HWCarbon) :-
+    calculateHWCarbon(Srcs, HWEnergy, SrcsCarbon),
     emissions(Src, MU), 
     SrcCarbon is Prob * MU * HWEnergy,
     HWCarbon is SrcCarbon + SrcsCarbon.
-carbon([], _, 0).
+calculateHWCarbon([], _, 0).
 
 calculateProfit(on(F, D, N), HWEnergy, Profit) :-
     vnfXUser(F, D, _, (RamReq, CPUReq, StorageReq)),

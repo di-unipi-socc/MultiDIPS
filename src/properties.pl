@@ -26,9 +26,9 @@ checkBW(P, AllocBW, OldAllocBW) :-
     checkLinks(Path, TotAllocBW).
 
 checkLinks([(N, M)|T], AllocBW) :-
-    checkLinks(T, AllocBW),
     findall(UsedBW, member((N, M, UsedBW), AllocBW), UsedBWs), sumlist(UsedBWs, TotUsedBW),
-    link(N ,M, _, BW), TotUsedBW =< BW.
+    link(N, M, _, BW), TotUsedBW =< BW,
+    checkLinks(T, AllocBW).
 checkLinks([], _).
 
 

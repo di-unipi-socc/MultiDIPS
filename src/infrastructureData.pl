@@ -11,7 +11,7 @@
 
 % Global intent
 % globalIntent(Property, Bound, Value, Unit)
-globalIntent(footprint, smaller, 0.800, kg).
+globalIntent(footprint, smaller, 0.600, kg).
 
 % changingProperty(Property, VF). 
 %% changing properties defined according to priority order
@@ -136,3 +136,4 @@ link(cloud2, edge1, 120, 200).
 link(cloud2, edge2, 125, 150).
 link(cloud2, edge3, 120, 150).
 link(cloud2, cloud1, 10, 1000).
+link(N, N, 0, 100000).          

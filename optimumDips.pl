@@ -2,9 +2,13 @@
 
 %% OPTIMUM SOLUTION %%
 optimumDips(Output) :-
+    statistics(cputime, T1),
     findall(intent(StakeHolder, IntentId, NUsers, TId), intent(StakeHolder, IntentId, NUsers, TId), AllIntents),
     findall((Prop, Cap), globalIntent(Prop, smaller, Cap, _), GlobProps),
-    optimalPsInfo(AllIntents, GlobProps, Output). 
+    optimalPsInfo(AllIntents, GlobProps, Output),
+    statistics(cputime, T2),
+    Time is T2 - T1,
+    write('CPU Time: '), writeln(Time).
 
 optimalPsInfo(AllIntents, GlobProps, BestSol) :-
     findall(PsInfo, validPsInfo(AllIntents, GlobProps, PsInfo), Sols),
@@ -16,9 +20,10 @@ validPsInfo(IntentList, GlobProps, PsInfo) :-
 
 validPsInfo([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
     findall(PInfo, dips(Intent, OldPsInfo, PInfo), PInfos),
-    empty(Intent, EmptyPInfo), AllPInfo = [EmptyPInfo|PInfos],
+    empty(Intent, EmptyPInfo),
+    AllPInfo = [EmptyPInfo|PInfos],
     member(ChoosenPInfo, AllPInfo),
     checkGlobalProperties(GlobProps, OldPsInfo, ChoosenPInfo),
     mergePlacements(OldPsInfo, ChoosenPInfo, TmpPsInfo),
     validPsInfo(Is, GlobProps, TmpPsInfo, NewPsInfo).
-validPsInfo([], _, PsInfo, PsInfo) :- writeln(PsInfo).
+validPsInfo([], _, PsInfo, PsInfo).

@@ -10,10 +10,7 @@ import parse as p
 import templates as t
 from numpy import random as rnd
 
-FAIL_PROB = 0.01
-
-LAT_MIN, LAT_MAX = 2, 40
-BW_MIN, BW_MAX = 100, 500
+FAIL_PROB = 0.006
 
 VARIATION = {'hw': {'lb': 0.1, 'ub': 1.2},
 			'lat': {'lb': 0.3, 'ub': 1.5},
@@ -28,9 +25,11 @@ GCI_VALUE = 0.475
 
 KWH_PER_MB_VALUE = 0.00008
 
-MAX_EMISSIONS_PER_NODE = 0.130
+MAX_EMISSIONS_PER_EDGE_NODE = 0.060
+MAX_EMISSIONS_PER_CLOUD_NODE = 0.180
 
-MAX_ENERGY_PER_NODE = 0.200
+MAX_ENERGY_PER_EDGE_NODE = 0.130
+MAX_ENERGY_PER_CLOUD_NODE = 0.400
 
 TYPES   = ['cloud', 'edge']
 PROBS   = [0.35, 0.65]
@@ -41,7 +40,7 @@ EMISSIONS = {'gas': 0.610,
              'coal': 1.1, 
              'onshorewind': 0.0097,
              'offshorewind': 0.0165,
-             'solar': 0.05} # https://solarbay.com.au/portfolio-item/how-much-emissions-does-solar-power-prevent/
+             'solar': 0.05}
 
 
 PRICE = {'edge': (0.030, 0.060, 0.00050), 'cloud': (0.015, 0.030, 0.00025)}
@@ -109,6 +108,7 @@ class Node():
 
 	def run(self, variation_rate, ramMax, cpuMax, storageMax):
 		if self.fail():
+			print("Fallito: " + self.id)
 			self.HWcaps = (0,0,0)
 		elif rnd.random() < variation_rate:
 			new_ramcap = min(round(rnd.uniform(self.baseHWcaps[0] * VARIATION["hw"]["lb"], self.baseHWcaps[0] * VARIATION["hw"]["ub"])), ramMax)
@@ -148,22 +148,23 @@ class Link():
 	def fail(self):
 		return rnd.random() < self.fail_prob
 
-	def run(self, variation_rate):
+	def run(self, variation_rate, minLat, maxLat, minBw, maxBw):
 		if self.fail():
-			self.lat = 1000
-			self.bw  = 1
+			print("Fallito: " + self.source.id + " - "+ self.dest.id)
+			self.lat = 10000
+			self.bw  = 0
 		elif rnd.random() < variation_rate:
 			new_lat = round(rnd.uniform(self.baseLat * VARIATION["lat"]["lb"], self.baseLat * VARIATION["lat"]["ub"]), 4)
-			self.lat = trunc_range(new_lat, LAT_MIN, LAT_MAX)
+			self.lat = trunc_range(new_lat, minLat, maxLat)
 
 			new_bw  = max(1,round(rnd.uniform(self.baseBw * VARIATION["bw"]["lb"], self.baseBw * VARIATION["bw"]["ub"]), 4))
-			self.bw  = trunc_range(new_bw, BW_MIN, BW_MAX)
+			self.bw  = trunc_range(new_bw, minBw, maxBw)
 
 	def __str__(self):
 		d = self.__dict__.copy()
 		d["source"] = d["source"].id
 		d["dest"] = d["dest"].id
-		return t.LINK.format(**d) + "\n"
+		return t.LINK.format(**d)
 	
 	def __repr__(self):
 		return self.__str__()
@@ -198,15 +199,25 @@ class Infrastructure(nx.DiGraph):
 		super().add_edge(link.source.id, link.dest.id, lat=link.lat, obj=link)
 
 	def generate(self):
-		self._generate_global_intent()
 		self._generate_cproperty()
 		self._generate_nodes()
 		self._generate_links()
+		self._generate_global_intent()
 
 	def _generate_global_intent(self):
 		unit = "kg" if self.gintentType=='footprint' else "kWh"
-		value = round(self._size * MAX_EMISSIONS_PER_NODE,3) if self.gintentType=='footprint' else round(self._size * MAX_ENERGY_PER_NODE,3)
-		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=value, unit=unit))
+		energyCap = 0
+		emissCap = 0
+		for _, n in self.nodes(data="obj"):
+			if n.type == 'cloud': 
+				energyCap += MAX_EMISSIONS_PER_CLOUD_NODE
+				emissCap += MAX_ENERGY_PER_CLOUD_NODE
+			else: 
+				energyCap += MAX_EMISSIONS_PER_EDGE_NODE
+				emissCap += MAX_ENERGY_PER_EDGE_NODE
+		if self.gintentType=='footprint': cap_value = round(emissCap, 3) 
+		else: cap_value = round(energyCap, 3)
+		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=cap_value, unit=unit))
 
 	def _generate_cproperty(self):
 		for prop,vnf in INFR_CHANGING_PROPERTIES:
@@ -253,53 +264,60 @@ class Infrastructure(nx.DiGraph):
 		
 	def _generate_links(self):		
 		for s, d in product(self.nodes, repeat=2):
-			if s != d:
-				lat = rnd.randint(LAT_MIN, LAT_MAX)
-				bw = rnd.randint(BW_MIN, BW_MAX)
+			if(s != d and (s,d) not in self.edges and (d,s) not in self.edges):
+				linkType = self.linkType(s,d)
+				lat = rnd.randint(self._values['link'][linkType]['lat']['lb'], self._values['link'][linkType]['lat']['ub'])
+				bw = rnd.randint(self._values['link'][linkType]['bw']['lb'], self._values['link'][linkType]['bw']['ub'])
 				self.add_link(Link(self.nodes[s]["obj"], self.nodes[d]["obj"], lat, bw))
+				self.add_link(Link(self.nodes[d]["obj"], self.nodes[s]["obj"], lat, bw))
 		"""
 		sp = nx.floyd_warshall_numpy(self, weight="lat")
 		for s,d in self.edges():
 			nx.set_edge_attributes(self, {(s,d): {"lat": sp[s,d]}})
 			self.edges[s,d]["obj"].lat = sp[s,d]	
 		"""
+
+	def linkType(self,s,d):
+		s = self.nodes[s]['obj']
+		d = self.nodes[d]['obj']
+		if s.type == d.type == 'edge': 
+			return 'e2e'
+		elif s.type == d.type == 'cloud':
+			return 'c2c'
+		else: return 'e2c'
+
 	def _get_discontiguous(self):
 		return "\n".join(t.DISCONTIGUOUS.format(s, d) for s, d in DISC_PREDICATES.items())
 		
 	def _get_global_intents(self):
-		out=""
-		for i in self.globalIntents:
-			out += str(i) + "\n"
-		return out
+		return "\n".join(str(i) for i in self.globalIntents)
 
 	def _get_changing_properties(self):
-		out=""
-		for i in self.changingProperties:
-			out += str(i) + "\n"
-		return out
+		return "\n".join(str(i) for i in self.changingProperties)
 	
-	def _get_GCI(self):
-		return t.GCI.format(value=GCI_VALUE)
+	def _get_emissions(self):
+		return "\n".join(t.EMISSION.format(s=s, p=p) for s, p in EMISSIONS.items())
 	
 	def _get_kWhperMB(self):
 		return t.KWH_PER_MB.format(value=KWH_PER_MB_VALUE)
+	
+	def _get_GCI(self):
+		return t.GCI.format(value=GCI_VALUE)
 	
 	def _get_price(self):
 		return t.PRICE.format(type="edge", price=EDGE_PRICE) + "\n" + t.PRICE.format(type="cloud", price=CLOUD_PRICE)
 	
 	def _get_nodes(self):
 		nodes = list(n for _, n in self.nodes(data="obj"))
-		rnd.shuffle(nodes)
 		return "\n".join(str(n) for n in nodes)
 	
 	def _get_links(self):
 		links = list(l for _,_,l in self.edges(data="obj"))
-		rnd.shuffle(links)
-		return "".join(str(l) for l in links)
+		return "\n".join(str(l) for l in links)
 	
-	def _get_emissions(self):
-		return "\n".join(t.EMISSION.format(s=s, p=p) for s, p in EMISSIONS.items())
-
+	def _get_self_link(self):
+		return 'link(N, N, 0, 100000).'
+	
 	def __str__(self):
 		out = self._get_discontiguous() + "\n\n"
 		out += self._get_global_intents() + "\n\n"
@@ -308,8 +326,9 @@ class Infrastructure(nx.DiGraph):
 		out += self._get_kWhperMB() + "\n\n"
 		out += self._get_GCI() + "\n\n"
 		out += self._get_price() + "\n\n"
-		out += self._get_nodes() + "\n\n"
-		out += self._get_links()
+		out += self._get_nodes() + "\n"
+		out += self._get_links() + "\n"
+		out += self._get_self_link()
 		return out
 	
 	def __repr__(self):
@@ -379,7 +398,9 @@ class Infrastructure(nx.DiGraph):
 				d 	= link["dest"]
 				lat = int(link["lat"])
 				bw 	= int(link["bw"])
-				if (s in self.nodes and d in self.nodes):
+				if s==d:
+					continue
+				elif (s in self.nodes and d in self.nodes):
 					self.add_link(Link(self.nodes[s]['obj'], self.nodes[d]['obj'], lat, bw))
 				else:
 					raise t.ParseError(f"Link {l} not valid. Source {s} or destination {d} not found.")
@@ -449,8 +470,19 @@ class Infrastructure(nx.DiGraph):
 			
 
 	def run(self, variation_rate):
-		[n.run(variation_rate, ramMax=self._values[n.type]['totRamHW']['ub'], cpuMax=self._values[n.type]['totCPUHW']['ub'], storageMax=self._values[n.type]['totStorageHW']['ub']) for _, n in self.nodes(data="obj")]
-		[l.run(variation_rate) for _,_,l in self.edges(data="obj")]
+		for _, n in self.nodes(data="obj"):
+			ramMax=self._values[n.type]['totRamHW']['ub']
+			cpuMax=self._values[n.type]['totCPUHW']['ub']
+			storageMax=self._values[n.type]['totStorageHW']['ub']
+			n.run(variation_rate, ramMax, cpuMax, storageMax) 
+		
+		for s,d,l in self.edges(data="obj"):
+			linkType=self.linkType(s,d)
+			minLat = self._values['link'][linkType]['lat']['lb']
+			maxLat = self._values['link'][linkType]['lat']['ub']
+			minBw = self._values['link'][linkType]['bw']['lb']
+			maxBw = self._values['link'][linkType]['bw']['ub']
+			l.run(variation_rate, minLat, maxLat, minBw, maxBw)  
 
 	def reset(self):
 		reset_file = join(t.INFRS_DIR, f"{self.id}.pl")

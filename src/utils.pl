@@ -38,20 +38,33 @@ addedAfter([After|Zs], After, G, [After, G|Zs]) :- addedAfter(Zs, After, G, Zs).
 addedAfter([X|Zs], After, G, [X|NewZs]) :- dif(X, After), addedAfter(Zs, After, G, NewZs).
 addedAfter([], _, _, []).
 
-mergePlacements(OldInfo, Info, NewInfo) :-
-    OldInfo = info(OldPR, OldC, OldE, OldPs, OldAllocBW, OldU), Info = info(PR, C, E, P, AllocBW, U),
+empty(Intent, PInfo) :- Intent = intent(_, IntentId, _, _), PInfo = info(0,0,0,(IntentId,[]),[],[]).
+
+mergePlacements(OldPsInfo, PInfo, NewPsInfo) :-
+    OldPsInfo = info(OldPR, OldC, OldE, OldPs, OldAllocBW, OldU), PInfo = info(PR, C, E, P, AllocBW, U),
     NewPR is OldPR + PR, NewC is OldC + C, NewE is OldE + E,
     append(AllocBW, OldAllocBW, NewAllocBW),
-    NewInfo = info(NewPR, NewC, NewE, [P|OldPs], NewAllocBW, [U|OldU]).
+    NewPsInfo = info(NewPR, NewC, NewE, [P|OldPs], NewAllocBW, [U|OldU]).
 
 placementPath([on(_,_,N), on(_,_,M)|T], Path) :-
     placementPath([on(_,_,M)|T], TmpPath),
     Path = [(N,M)|TmpPath].
 placementPath([on(_,_,_)],[]).
 
-findBW(IntentId, F, start, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _, S, end), dif(F,S).
-findBW(IntentId, F, _, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _,_, F).
-findBW(IntentId, F, LastBWValue, LastBWValue) :- dif(LastBWValue, start), \+ propertyExpectation(IntentId, bandwidth, _,_,_,_,_, F).
+nodeToNodeBW(_, _, [], NewAllocBW, NewAllocBW).
+nodeToNodeBW(IntentId, N, P, [], [(N, M, BWValue)]) :- 
+    P = [on(F, _, M)|_], dif(N,M), 
+    findReqBW(IntentId, F, start, BWValue). 
+nodeToNodeBW(IntentId, N, P, OldAllocBW, [(N, M, BWValue)|OldAllocBW]) :-
+    P = [on(F, _, M)|_],  dif(N,M),
+    OldAllocBW = [(_,_,OldBWValue)|_],
+    findReqBW(IntentId, F, OldBWValue, BWValue). 
+nodeToNodeBW(_, N, P, NewAllocBW, NewAllocBW) :-
+    P = [on(_, _, N)|_].
+
+findReqBW(IntentId, F, start, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _, S, end), dif(F,S).
+findReqBW(IntentId, F, _, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _,_, F).
+findReqBW(IntentId, F, LastBWValue, LastBWValue) :- dif(LastBWValue, start), \+ propertyExpectation(IntentId, bandwidth, _,_,_,_,_, F).
 
 findReqHW([F|Fs], NUsers, HWReqs) :-
     findReqHW(Fs, NUsers, FsReqs),
@@ -90,13 +103,6 @@ nodeMinMax(Nodes, Min, Max) :-
     max_list(AllEmissions, MaxEmissions),
     Min = (MinCost, MinEnergy, MinEmissions),
     Max = (MaxCost, MaxEnergy, MaxEmissions).
-
-/*
-nodeTotEnergy(N, Energy) :-
-    pue(N, Pue),
-    ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3),
-    Energy is (E1+E2+E3)*Pue.
-*/
 
 nodeUnitEnergy(N, Energy) :-
     totHW(N,(Ram, Cpu, Storage)),

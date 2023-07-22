@@ -188,62 +188,61 @@ class Intents():
         return "\n".join(t.DISCONTIGUOUS.format(s.replace('#',''), d) for s, d in DISC_PREDICATES.items())+"\n"
     
     def _get_intents(self, num):
-        out=""
+        out = ""
         for s in self._intents.values():
             sCopy = copy.deepcopy(s)
             sCopy.stakeholder = sCopy.stakeholder + str(num)
             sCopy.intentId = sCopy.intentId + str(num) 
-            out += str(sCopy)+"\n"
+            out += str(sCopy) + "\n"
         return out
     
     def _get_targets(self):
-        return "\n".join([str(s) for s in self._targets.values()])+"\n"
+        return "\n".join([str(s) for s in self._targets.values()])
     
     def _get_changingProperties(self, num):
-        out=""
+        out = ""
         for dictList in self._changingProperties.values():
-            out +="\n"
+            out += "\n"
             for s in dictList:
                 sCopy = copy.deepcopy(s)
                 sCopy.intentId= sCopy.intentId + str(num) 
-                out += str(sCopy)+"\n"
+                out += str(sCopy) + "\n"
         return out
     
     def _get_nonChangingProperties(self, num):
-        out=""
+        out = ""
         for dictList in self._nonChangingProperties.values():
-            out +="\n"
+            out += "\n"
             for s in dictList: 
                 sCopy = copy.deepcopy(s)
                 sCopy.intentId= sCopy.intentId + str(num) 
-                out += str(sCopy)+"\n"
+                out += str(sCopy) + "\n"
         return out
     
     def _get_vnfs(self):
-        out="\n"
+        out = "\n"
         for dictList in self._vnfs.values():
             for s in dictList: 
-                out += str(s)+"\n"
+                out += str(s) + "\n"
         return out
     
     def _get_vnfsXusers(self):
-        out=""
+        out = ""
         for dictList in self._vnfsXusers.values():
-            out +="\n"
+            out += "\n"
             for s in dictList: 
-                out += str(s)+"\n"
+                out += str(s) + "\n"
         return out
     
-
     def __str__(self):
         out = self._get_discontiguous() + "\n"
         for i in range(1, (self._size//5 +1)):
-            out += self._get_intents(i) +"\n"
-            out += self._get_changingProperties(i) + "\n"
+            out += self._get_intents(i) 
+            out += self._get_changingProperties(i)
             out += self._get_nonChangingProperties(i) + "\n"
         out += self._get_targets() + "\n"
-        out += self._get_vnfs() + "\n"
-        out += self._get_vnfsXusers() + "\n"
+        out += self._get_vnfs()
+        out += self._get_vnfsXusers()
         return out
     
     def __repr__(self):

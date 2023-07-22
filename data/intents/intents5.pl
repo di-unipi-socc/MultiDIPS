@@ -11,7 +11,6 @@ intent(homeBankingOp1, hbIntent1, 5000, homeBankingService).
 intent(cloudStorageOp1, csIntent1, 500, cloudStorageService).
 intent(smartRoadOp1, srIntent1, 10000, smartRoadService).
 
-
 propertyExpectation(gsIntent1, privacy, edge, _, _).
 propertyExpectation(gsIntent1, logging, cloud, cloudGamingVF, _).
 
@@ -24,7 +23,6 @@ propertyExpectation(hbIntent1, logging, cloud, cloudHomeBankingVF, _).
 propertyExpectation(csIntent1, security, edge, cloudStorageVF, _).
 
 propertyExpectation(srIntent1, caching, edge, _, edgeDataCollecting).
-
 
 propertyExpectation(gsIntent1, bandwidth, larger, hard, 20, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent1, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
@@ -54,7 +52,6 @@ target(homeBankingService, [edgeHomeBankingVF, cloudDPI, cloudHomeBankingVF]).
 target(cloudStorageService, [cloudStorageVF]).
 target(smartRoadService, [edgeDataCollecting, cloudDataAnalysis]).
 
-
 vnf(edgeGamingVF, edge, 15).
 vnf(cloudGamingVF, cloud, 8).
 vnf(encVF, edge, 4).
@@ -71,7 +68,6 @@ vnf(cloudStorageVF, cloud, 8).
 vnf(edgeDataCollecting, edge, 5).
 vnf(cloudDataAnalysis, cloud, 15).
 vnf(cacheVF, edge, 2).
-
 
 vnfXUser(edgeGamingVF, s, (0,100), (2,1,100)).
 vnfXUser(edgeGamingVF, m, (101,1000), (4,2,200)).
@@ -119,4 +115,3 @@ vnfXUser(cloudDataAnalysis, l, (15001, inf), (72,10,2100)).
 
 vnfXUser(cacheVF, s, (0, 5000), (2,1,400)).
 vnfXUser(cacheVF, m, (5001, inf), (4,1,800)).
-

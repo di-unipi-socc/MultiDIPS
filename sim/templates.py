@@ -9,7 +9,6 @@ SIM_DIR = join(ROOT_DIR, 'sim')
 INFRS_DIR = join(ROOT_DIR, 'data', 'infrs')
 INTENTS_DIR = join(ROOT_DIR, 'data', 'intents')
 SRC_INTENT_DIR = join(ROOT_DIR, 'src', 'intentsData.pl')
-COMMITS_DIR = join(SIM_DIR, 'commits')
 RESULTS_DIR = join(SIM_DIR, 'results')
 PLOTS_DIR = join(SIM_DIR, 'plots')
 

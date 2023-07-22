@@ -9,6 +9,7 @@
         "storageUnitkWh": {"lb": 0.0005, "ub": 0.0008},
         "energyCost" : {"lb": 0.100, "ub": 0.500}              
     },
+    
     "edge": {
         "totRamHW": {"lb": 12, "ub": 48},
         "totCPUHW": {"lb": 4, "ub": 14},
@@ -18,5 +19,20 @@
         "CPUUnitkWh": {"lb": 0.012, "ub": 0.015},   
         "storageUnitkWh": {"lb": 0.0006, "ub": 0.001},
         "energyCost" : {"lb": 0.100, "ub": 0.500}              
+    },
+    
+    "link": {
+        "e2e": {
+            "bw": {"lb": 80, "ub": 200},
+            "lat": {"lb": 15, "ub": 50}
+        },
+        "e2c": {
+            "bw": {"lb": 200, "ub": 500},
+            "lat": {"lb": 25, "ub": 80}
+        },
+        "c2c": {
+            "bw": {"lb": 500, "ub": 2000},
+            "lat": {"lb": 1, "ub": 20}
+        }
     }
 }
