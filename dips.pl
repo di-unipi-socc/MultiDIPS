@@ -1,11 +1,6 @@
 :-['src/properties.pl','src/rank.pl','src/utils.pl']. 
 :- ['src/infrastructureData.pl','src/intentsData.pl'].
 
-:- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
-:- set_prolog_flag(stack_limit, 32 000 000 000).
-:- set_prolog_flag(last_call_optimisation, true).
-
-
 dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
     OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
     chainForIntent(IntentId, TargetId, Chain),
@@ -46,6 +41,7 @@ dimensionedChain([(F,A)|Zs], U, OldC, NewC) :-
     vnfXUser(F, D, (L, H), _), between(L, H, U),  dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
 dimensionedChain([], _, Chain, Chain).
 
+/*
 placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
     findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, SortedNodes),                   
     placedChain(DimChain, IntentId, OldPs, SortedNodes, [], [], AllocBW, P).
@@ -54,6 +50,18 @@ placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, OldAllocBW, OldP, Al
     hwOK(N, HWReqs, HWCaps, [(IntentId, OldP)|OldPs]),
     nodeToNodeBW(IntentId, N, OldP, OldAllocBW, TmpAllocBW),
     placedChain(VNFs, IntentId, OldPs, SortedNodes, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
+placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
+*/
+
+placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
+    findall(N, node(N,_,_), Nodes),               
+    placedChain(DimChain, IntentId, OldPs, Nodes, [], [], AllocBW, P).
+placedChain([(F, L, D)|VNFs], IntentId, OldPs, Nodes, OldAllocBW, OldP, AllocBW, NewP) :-
+    sortByVolume(Nodes, (OldP,OldPs), SortedNodes),
+    vnfXUser(F, D, _, HWReqs), member((_,N), SortedNodes), node(N, L, HWCaps),
+    hwOK(N, HWReqs, HWCaps, [(IntentId, OldP)|OldPs]),
+    nodeToNodeBW(IntentId, N, OldP, OldAllocBW, TmpAllocBW),
+    placedChain(VNFs, IntentId, OldPs, Nodes, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
 placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
 
 hwOK(N, HWReqs, HWCaps, OldPs) :-

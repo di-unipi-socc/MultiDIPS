@@ -1,5 +1,9 @@
 :-['dips.pl'].
 
+:- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
+:- set_prolog_flag(stack_limit, 32 000 000 000).
+:- set_prolog_flag(last_call_optimisation, true).
+
 %% OPTIMUM SOLUTION %%
 optimumDips(Output) :-
     statistics(cputime, T1),

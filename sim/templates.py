@@ -14,6 +14,7 @@ PLOTS_DIR = join(SIM_DIR, 'plots')
 
 VALUES_FILE = join(SIM_DIR, "values.json")
 SIM_PL_FILE = join(SIM_DIR, "sim.pl")
+MILP_PL_FILE = join(SIM_DIR, "milp.pl")
 RESULTS_FILE = join(RESULTS_DIR, "{intents}-{infr}-{rate}-{timestamp}.csv")
 TMP_RES_FILE = join(RESULTS_DIR, "{intents}-{infr}-{timestamp}-tmp.csv")
 ALL_RESULTS = RESULTS_FILE.format(intents="*", infr="*", rate="*", timestamp="*")
@@ -68,6 +69,8 @@ VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 # --- QUERY TEMPLATES ---
 
 MD_QUERY = "testMultiDips(Profit, Energy, Carbon, Placement, AllocBW, UnsatProps, Infs, Time)."
+
+MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, Carbon_ij, Profit_ij)."
 
 # --- PARSE UTILITY FUNCTIONS ---
 

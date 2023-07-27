@@ -3,7 +3,7 @@
 % First in - first served
 rankIntent1(OrderedIntentList, _, OrderedIntentList).
 
-% Shorter Chain first, if Chains lengths are equals, minimum number of property first.
+% Longer Chain first. If Chains lengths are equals maximum number of property first.
 rankIntent2([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
     Intent = intent(_, IntentId, _, TId),
     target(TId, Chain),
@@ -40,6 +40,7 @@ rankIntent4(IntentList, _, OrderedIntentList) :- random_permutation(IntentList, 
 
 %% NODE RANKING %%
 
+% Weighted ranking
 weigth(cost, 32).
 weigth(energy, 18).
 weigth(emissions, 50).
@@ -77,3 +78,34 @@ normalizedValues(Values, Min, Max, NormValues) :-
 
 normalization(Value, MinValue, MaxValue, NormValue) :-
     NormValue is (Value-MinValue)/(MaxValue-MinValue).
+
+
+% Volume (resources) ranking
+sortByVolume(Nodes, Ps, SortedNodes) :-
+    Ps = (OldP, OldPs),
+    append([(_,OldP)], OldPs, TotPs),
+    sortByVolume(Nodes, TotPs, [], SortedNodes).
+
+sortByVolume([N|T], Ps, OldSortedNodes, SortedNodes) :-
+    volume(N, Ps, Volume),
+    sortByVolume(T, Ps, [(Volume,N)|OldSortedNodes], SortedNodes).
+sortByVolume([], _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
+
+volume(N, Ps, Volume) :-
+    allocatedHW(Ps, N, (AllocRam, AllocCPU, AllocStor)),
+    totHW(N, (TotRam, TotCPU, TotStor)),
+    node(N,_,(Ram, CPU, Stor)),
+    singleVolume(AllocRam, Ram, TotRam, RamVolume),
+    singleVolume(AllocCPU, CPU, TotCPU, CPUVolume),
+    singleVolume(AllocStor, Stor, TotStor, StorVolume),
+    Volume is RamVolume * CPUVolume * StorVolume.
+
+singleVolume(AllocHW, HW, TotHW, HWVolume) :-
+    Load is 1 - (HW + AllocHW)/TotHW,
+    dif(Load, 1),
+    HWVolume is 1/(1 - Load).
+
+singleVolume(AllocHW, HW, TotHW, HWVolume) :-
+    Load is 1 - (HW + AllocHW)/TotHW,
+    \+ dif(Load, 1),
+    HWVolume is 100.
