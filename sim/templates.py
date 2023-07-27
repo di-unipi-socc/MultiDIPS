@@ -2,6 +2,10 @@ from os.path import abspath, dirname, join
 from time import strftime
 from pyswip import Atom, Functor
 
+# --- CONSTANTS ---
+LAT_MAX_VALUE = 10000
+
+
 # --- DIRECTORIES & FILES ---
 
 ROOT_DIR = dirname(dirname(abspath(__file__)))
