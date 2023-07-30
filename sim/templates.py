@@ -4,7 +4,7 @@ from pyswip import Atom, Functor
 
 # --- CONSTANTS ---
 LAT_MAX_VALUE = 10000
-
+RESOURCES_TYPES = ["RAM", "CPU", "STORAGE"]
 
 # --- DIRECTORIES & FILES ---
 
@@ -74,7 +74,7 @@ VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 
 MD_QUERY = "testMultiDips(Profit, Energy, Carbon, Placement, AllocBW, UnsatProps, Infs, Time)."
 
-MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, Carbon_ij, Profit_ij)."
+MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_emissions, Carbon_ij, Profit_ij)."
 
 # --- PARSE UTILITY FUNCTIONS ---
 

@@ -6,7 +6,7 @@
 :- set_prolog_flag(last_call_optimisation, true).
 
 % Milp pre calculations
-milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, Carbon_ij, Profit_ij) :-
+milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_emissions, Carbon_ij, Profit_ij) :-
     % nodes infos
     findall((N, L, HWRes), node(N, L, HWRes), NodesInfos),
     nodesInfo(NodesInfos, Nodes, Layer_j, Res_j, Power_j, Pue_j, ECost_j),
@@ -18,9 +18,10 @@ milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, ReqHW_i, La
     linkInfo(Nodes, Nodes, LinkBW_jk, LinkLat_jk),
     % Max emissions
     globalIntent(footprint, smaller, MaxEmissions, kg),
+    % BW emissions
+    kWhPerMB(BW_Energy), averageGCI(BW_carbon_Intensity), BW_emissions is BW_Energy * BW_carbon_Intensity,
     % ij infos
     ijInfos(OnlyVnfs, Dim_i, Nodes, Carbon_ij, Profit_ij).
-
 
 
 nodesInfo([Node|T], Nodes, Layer_j, Res_j, Power_j, Pue_j, ECost_j) :-

@@ -53,10 +53,10 @@ placementPath([on(_,_,_)],[]).
 
 nodeToNodeBW(_, _, [], NewAllocBW, NewAllocBW).
 nodeToNodeBW(IntentId, N, P, [], [(N, M, BWValue)]) :- 
-    P = [on(F, _, M)|_], dif(N,M), 
+    P = [on(F, _, M)|_],  
     findReqBW(IntentId, F, start, BWValue). 
 nodeToNodeBW(IntentId, N, P, OldAllocBW, [(N, M, BWValue)|OldAllocBW]) :-
-    P = [on(F, _, M)|_],  dif(N,M),
+    P = [on(F, _, M)|_], 
     OldAllocBW = [(_,_,OldBWValue)|_],
     findReqBW(IntentId, F, OldBWValue, BWValue). 
 nodeToNodeBW(_, N, P, NewAllocBW, NewAllocBW) :-
@@ -65,6 +65,14 @@ nodeToNodeBW(_, N, P, NewAllocBW, NewAllocBW) :-
 findReqBW(IntentId, F, start, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _, S, end), dif(F,S).
 findReqBW(IntentId, F, _, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _,_, F).
 findReqBW(IntentId, F, LastBWValue, LastBWValue) :- dif(LastBWValue, start), \+ propertyExpectation(IntentId, bandwidth, _,_,_,_,_, F).
+
+filterAllocBW([(N,M,Value)|T], FilteredAllocBW) :-
+    filterAllocBW(T, TmpFilteredAllocBW),
+    dif(N, M),
+    FilteredAllocBW = [(N, M, Value)|TmpFilteredAllocBW].
+filterAllocBW([(N,N,_)|T], FilteredAllocBW) :-
+    filterAllocBW(T, FilteredAllocBW).
+filterAllocBW([],[]).
 
 findReqHW([F|Fs], NUsers, HWReqs) :-
     findReqHW(Fs, NUsers, FsReqs),
