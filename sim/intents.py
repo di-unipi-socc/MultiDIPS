@@ -5,8 +5,8 @@ import parse as p
 import click
 from typing import List
 import copy
+from numpy import random as rnd
 
-DISC_PREDICATES = {'intent': 4, 'propertyExpectation': 5, 'propertyExpectation#': 8, 'target': 2, 'vnf': 3, 'vnfXUser': 4}
 
 class Intent():
     def __init__(self, stakeholder : str, intentId: str, nUsers: int, targetId: str):
@@ -135,6 +135,7 @@ class Intents():
     def __init__(self, readPath: str, writePath: str, size: int = 0):
         self._size = size
         self.id = f"intents{self._size}.pl"
+        self._intentsId = []
         self._intents: dict(str, Intent) = {}
         self._targets: dict(str, Target) = {}
         self._changingProperties: dict(str, List[ChangingProperty]) = {}
@@ -185,39 +186,50 @@ class Intents():
             self._vnfsXusers[vnfXusers.id] = [vnfXusers]
 
     def _get_discontiguous(self):
-        return "\n".join(t.DISCONTIGUOUS.format(s.replace('#',''), d) for s, d in DISC_PREDICATES.items())+"\n"
+        return "\n".join(t.DISCONTIGUOUS.format(s.replace('#',''), d) for s, d in t.INT_DISC_PREDICATES.items())+"\n"
     
     def _get_intents(self, num):
         out = ""
         for s in self._intents.values():
-            sCopy = copy.deepcopy(s)
-            sCopy.stakeholder = sCopy.stakeholder + str(num)
-            sCopy.intentId = sCopy.intentId + str(num) 
-            out += str(sCopy) + "\n"
+           out += self.print_intent(num, s)
         return out
-    
+
+    def print_intent(self, num, s):
+        sCopy = copy.deepcopy(s)
+        sCopy.stakeholder = sCopy.stakeholder + str(num)
+        sCopy.intentId = sCopy.intentId + str(num) 
+        return str(sCopy) + "\n"
+
     def _get_targets(self):
         return "\n".join([str(s) for s in self._targets.values()])
     
     def _get_changingProperties(self, num):
         out = ""
         for dictList in self._changingProperties.values():
-            out += "\n"
-            for s in dictList:
-                sCopy = copy.deepcopy(s)
-                sCopy.intentId= sCopy.intentId + str(num) 
-                out += str(sCopy) + "\n"
+            out += self.print_changingProperties(num, dictList)
+        return out
+
+    def print_changingProperties(self, num, dictList):
+        out = "\n"
+        for s in dictList:
+            sCopy = copy.deepcopy(s)
+            sCopy.intentId= sCopy.intentId + str(num) 
+            out += str(sCopy) + "\n"
         return out
     
     def _get_nonChangingProperties(self, num):
         out = ""
         for dictList in self._nonChangingProperties.values():
-            out += "\n"
-            for s in dictList: 
-                sCopy = copy.deepcopy(s)
-                sCopy.intentId= sCopy.intentId + str(num) 
-                out += str(sCopy) + "\n"
-        return out
+            out += self.print_nonChangingProperties(num, dictList)
+        return out 
+
+    def print_nonChangingProperties(self, num, dictList):
+        out = "\n"
+        for s in dictList: 
+            sCopy = copy.deepcopy(s)
+            sCopy.intentId= sCopy.intentId + str(num) 
+            out += str(sCopy) + "\n"
+        return out + "\n"
     
     def _get_vnfs(self):
         out = "\n"
@@ -236,10 +248,18 @@ class Intents():
     
     def __str__(self):
         out = self._get_discontiguous() + "\n"
-        for i in range(1, (self._size//5 +1)):
-            out += self._get_intents(i) 
-            out += self._get_changingProperties(i)
-            out += self._get_nonChangingProperties(i) + "\n"
+
+        i = 1
+        while(i <= self._size):
+            random_intent_id = self._intentsId[rnd.randint(0, len(self._intentsId))]
+            random_intent = self._intents[random_intent_id]
+            random_changProp = self._changingProperties[random_intent_id]
+            random_nonChangProp = self._nonChangingProperties[random_intent_id]
+            out += self.print_intent(i, random_intent)
+            out += self.print_changingProperties(i, random_changProp)
+            out += self.print_nonChangingProperties(i, random_nonChangProp)
+            i += 1
+
         out += self._get_targets() + "\n"
         out += self._get_vnfs()
         out += self._get_vnfsXusers()
@@ -274,6 +294,7 @@ class Intents():
                 nUsers = intent["nUsers"]
                 targetId = intent["targetId"]
 
+                self._intentsId.append(intentId)
                 self.add_intent(Intent(stakeholder=stakeholder, intentId=intentId, nUsers=nUsers, targetId=targetId))
             else:
                 raise t.ParseError(f"Error parsing intent {intent}")
@@ -357,9 +378,6 @@ class Intents():
 @click.option("--writepath", "-wp", type=click.Path(exists=True, writable=True), default=t.INTENTS_DIR, help="Directory path to write the intents.")
 def main(sizes, readpath, writepath):
     for size in sizes:
-        if size % 5 != 0:
-            print(str(size) + " is not a multiple of 5. Size must be a multiple of 5.")
-        else:
             intents = Intents(size=size, readPath=readpath, writePath=writepath)
             intents.parse() 
             intents.upload()

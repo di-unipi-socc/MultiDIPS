@@ -1,7 +1,17 @@
 %% INTENT RANKING %%
 
+% Rank mode choice
+rankIntent(RankMode, IntentList, OrderedIntentList) :-
+    RankMode = 1, rankIntent1(IntentList, OrderedIntentList).
+rankIntent(RankMode, IntentList, OrderedIntentList) :-
+    RankMode = 2, rankIntent2(IntentList, [], OrderedIntentList).
+rankIntent(RankMode, IntentList, OrderedIntentList) :-
+    RankMode = 3, rankIntent3(IntentList, [], OrderedIntentList).
+rankIntent(RankMode, IntentList, OrderedIntentList) :-
+    RankMode = 4, rankIntent4(IntentList, OrderedIntentList).
+
 % First in - first served
-rankIntent1(OrderedIntentList, _, OrderedIntentList).
+rankIntent1(OrderedIntentList, OrderedIntentList).
 
 % Longer Chain first. If Chains lengths are equals maximum number of property first.
 rankIntent2([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
@@ -35,27 +45,29 @@ rankIntent3([], UnorderedIntentList, OrderedIntentList) :-
 propertiesVNF(IntentId, F) :- propertyExpectation(IntentId, Property, _, _, _), changingProperty(Property, F).
 
 % Random
-rankIntent4(IntentList, _, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
+rankIntent4(IntentList, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
 
 
 %% NODE RANKING %%
 
 % Weighted ranking
-weigth(cost, 32).
-weigth(energy, 18).
-weigth(emissions, 50).
+weight(unitCost, 100).
+weight(emission, 0).
+weight(freeHW, 0).
 
-sortByAttributes(Nodes, SortedNodes) :- 
-    nodeMinMax(Nodes, Min, Max),
-    sortByAttributes(Nodes, Min, Max, [], SortedNodes).
-sortByAttributes([N|T], Min, Max, OldSortedNodes, SortedNodes) :- 
+sortByAttributes(Nodes, Ps, SortedNodes) :- 
+    nodeMinMax(Nodes, Ps, Min, Max),
+    sortByAttributes(Nodes, Ps, Min, Max, [], SortedNodes).
+sortByAttributes([N|T], Ps, Min, Max, OldSortedNodes, SortedNodes) :- 
     energyCost(N, Cost),
     nodeUnitEnergy(N, Energy),
+    UnitCost is Cost * Energy,
     energySourceMix(N, Sources),
     nodeEmissions(Sources, NodeEmissions),
-    rank((Cost, Energy, NodeEmissions), Min, Max, Rank),
-    sortByAttributes(T, Min, Max, [(Rank, N)|OldSortedNodes], SortedNodes).
-sortByAttributes([], _, _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
+    freeHWScore(N, Ps, FreeHWScore),
+    rank((UnitCost, NodeEmissions, FreeHWScore), Min, Max, Rank),
+    sortByAttributes(T, Ps, Min, Max, [(Rank, N)|OldSortedNodes], SortedNodes).
+sortByAttributes([], _, _, _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
 
 nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
     nodeEmissions(Srcs, TmpNodeEmissions),
@@ -64,48 +76,17 @@ nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
 nodeEmissions([], 0).
 
 rank(Values, Min, Max, Rank) :-
-    normalizedValues(Values, Min, Max, (NormCost, NormEnergy, NormEmissions)),
-    weigth(cost, WeigthC), weigth(energy, WeigthEn), weigth(emissions, WeigthEm),
-    Rank is NormCost * WeigthC + NormEnergy * WeigthEn + NormEmissions * WeigthEm.
+    normalizedValues(Values, Min, Max, (NormUnitCost, NormEmissions, NormFreeHWScore)),
+    weight(unitCost, WeightUnitCost), weight(emission, WeightEmissions), weight(freeHW, WeightFreeHW),
+    Rank is NormUnitCost * WeightUnitCost + NormEmissions * WeightEmissions + NormFreeHWScore * WeightFreeHW.
 
 normalizedValues(Values, Min, Max, NormValues) :-
-    Values = (Cost, Energy, NodeEmissions),
-    Min = (MinCost, MinEnergy, MinEmissions), Max = (MaxCost, MaxEnergy, MaxEmissions),
-    normalization(Cost, MinCost, MaxCost, NormCost),
-    normalization(Energy, MinEnergy, MaxEnergy, NormEnergy),
+    Values = (UnitCost, NodeEmissions, FreeHW),
+    Min = (MinUnitCost, MinEmissions, MinFreeHW), Max = (MaxUnitCost, MaxEmissions, MaxFreeHW),
+    normalization(UnitCost, MinUnitCost, MaxUnitCost, NormUnitCost),
     normalization(NodeEmissions, MinEmissions, MaxEmissions, NormEmissions),
-    NormValues = (NormCost, NormEnergy, NormEmissions).
+    normalization(FreeHW, MinFreeHW, MaxFreeHW, NormFreeHW),
+    NormValues = (NormUnitCost, NormEmissions, NormFreeHW).
 
 normalization(Value, MinValue, MaxValue, NormValue) :-
     NormValue is (Value-MinValue)/(MaxValue-MinValue).
-
-
-% Volume (resources) ranking
-sortByVolume(Nodes, Ps, SortedNodes) :-
-    Ps = (OldP, OldPs),
-    append([(_,OldP)], OldPs, TotPs),
-    sortByVolume(Nodes, TotPs, [], SortedNodes).
-
-sortByVolume([N|T], Ps, OldSortedNodes, SortedNodes) :-
-    volume(N, Ps, Volume),
-    sortByVolume(T, Ps, [(Volume,N)|OldSortedNodes], SortedNodes).
-sortByVolume([], _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
-
-volume(N, Ps, Volume) :-
-    allocatedHW(Ps, N, (AllocRam, AllocCPU, AllocStor)),
-    totHW(N, (TotRam, TotCPU, TotStor)),
-    node(N,_,(Ram, CPU, Stor)),
-    singleVolume(AllocRam, Ram, TotRam, RamVolume),
-    singleVolume(AllocCPU, CPU, TotCPU, CPUVolume),
-    singleVolume(AllocStor, Stor, TotStor, StorVolume),
-    Volume is RamVolume * CPUVolume * StorVolume.
-
-singleVolume(AllocHW, HW, TotHW, HWVolume) :-
-    Load is 1 - (HW + AllocHW)/TotHW,
-    dif(Load, 1),
-    HWVolume is 1/(1 - Load).
-
-singleVolume(AllocHW, HW, TotHW, HWVolume) :-
-    Load is 1 - (HW + AllocHW)/TotHW,
-    \+ dif(Load, 1),
-    HWVolume is 100.

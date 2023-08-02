@@ -101,21 +101,34 @@ sumBW([], 0).
 
 sumReqs((Ram1,CPU1,Storage1), (Ram2, CPU2, Storage2), (Ram1+Ram2, CPU1+CPU2, Storage1+Storage2)).
 
-nodeMinMax(Nodes, Min, Max) :-
-    findall(Cost, (member(N, Nodes), energyCost(N,Cost)), AllCost),
-    findall(Energy, (member(N, Nodes), nodeUnitEnergy(N, Energy)), AllEnergy),
+nodeMinMax(Nodes, Ps, Min, Max) :-
+    findall(Cost * Energy, (member(N, Nodes), nodeUnitEnergy(N, Energy), energyCost(N,Cost)), AllUnitCost),
     findall(Emissions, emissions(_,Emissions), AllEmissions),
-    min_list(AllCost, MinCost), min_list(AllEnergy, MinEnergy), 
+    findall(FreeHWScore, (member(N, Nodes), freeHWScore(N, Ps, FreeHWScore)), AllFreeHWScore),
+    min_list(AllUnitCost, MinUnitCost), 
     min_list(AllEmissions, MinEmissions),  
-    max_list(AllCost, MaxCost), max_list(AllEnergy, MaxEnergy), 
+    min_list(AllFreeHWScore, MinFreeHWScore),
+    max_list(AllUnitCost, MaxUnitCost), 
     max_list(AllEmissions, MaxEmissions),
-    Min = (MinCost, MinEnergy, MinEmissions),
-    Max = (MaxCost, MaxEnergy, MaxEmissions).
+    max_list(AllFreeHWScore, MaxFreeHWScore),
+    Min = (MinUnitCost, MinEmissions, MinFreeHWScore),
+    Max = (MaxUnitCost, MaxEmissions, MaxFreeHWScore).
 
 nodeUnitEnergy(N, Energy) :-
     totHW(N,(Ram, Cpu, Storage)),
     pue(N, Pue),
     ramEnergyProfile(N, 1, E1), cpuEnergyProfile(N, 1, E2), storageEnergyProfile(N, 1, E3),
     Energy is (E1/Ram + E2/Cpu + E3/Storage) * Pue.
+
+freeHWScore(N, Ps, FreeHWScore) :-
+    allocatedHW(Ps, N, (AllocRam, AllocCPU, AllocStor)),
+    node(N,_,(Ram, CPU, Stor)),
+    singleFreeHW(AllocRam, Ram, RamFreeHW),
+    singleFreeHW(AllocCPU, CPU, CPUFreeHW),
+    singleFreeHW(AllocStor, Stor, StorFreeHW),
+    FreeHWScore is 1/(1+(RamFreeHW + CPUFreeHW + StorFreeHW/100)).
+    
+singleFreeHW(AllocHW, HW, FreeHW) :-
+    FreeHW is HW - AllocHW.
 
 extractIntent((_,_, X), X).

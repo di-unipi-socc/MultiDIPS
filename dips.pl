@@ -1,5 +1,5 @@
 :-['src/properties.pl','src/rank.pl','src/utils.pl']. 
-:- ['src/infrastructureData.pl','src/intentsData.pl'].
+%:- ['src/infrastructureData.pl','src/intentsData.pl'].
 
 dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
     OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
@@ -43,7 +43,7 @@ dimensionedChain([], _, Chain, Chain).
 
 
 placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
-    findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, SortedNodes),                   
+    findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, OldPs, SortedNodes),                   
     placedChain(DimChain, IntentId, OldPs, SortedNodes, [], [], AllAllocBW, P),
     filterAllocBW(AllAllocBW, AllocBW).
 placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, OldAllocBW, OldP, AllocBW, NewP) :-
@@ -53,25 +53,12 @@ placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, OldAllocBW, OldP, Al
     placedChain(VNFs, IntentId, OldPs, SortedNodes, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
 placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
 
-/*
-placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
-    findall(N, node(N,_,_), Nodes),               
-    placedChain(DimChain, IntentId, OldPs, Nodes, [], [], AllAllocBW, P),
-    filterAllocBW(AllAllocBW, AllocBW).
-placedChain([(F, L, D)|VNFs], IntentId, OldPs, Nodes, OldAllocBW, OldP, AllocBW, NewP) :-
-    sortByVolume(Nodes, (OldP,OldPs), SortedNodes),
-    vnfXUser(F, D, _, HWReqs), member((_,N), SortedNodes), node(N, L, HWCaps),
-    hwOK(N, HWReqs, HWCaps, [(IntentId, OldP)|OldPs]),
-    nodeToNodeBW(IntentId, N, OldP, OldAllocBW, TmpAllocBW),
-    placedChain(VNFs, IntentId, OldPs, Nodes, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
-placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
-*/
-
 hwOK(N, HWReqs, HWCaps, OldPs) :-
     HWReqs = (RamReq, CPUReq, StorageReq),
     HWCaps = (RamCap, CPUCap, StorageCap),
     allocatedHW(OldPs, N, (AllocRam, AllocCPU, AllocStorage)),
     RamReq + AllocRam =< RamCap, CPUReq + AllocCPU =< CPUCap, StorageReq + AllocStorage =< StorageCap.
+
 
 calculateHWInfo([on(F, D, N)|T], TotHWEnergy, TotHWCarbon, TotProfit):-
     calculateHWInfo(T, TmpHWEnergy, TmpHWCarbon, TmpProfit),

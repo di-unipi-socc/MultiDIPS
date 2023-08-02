@@ -1,6 +1,7 @@
 import atexit
 import glob
 import time
+from itertools import product 
 from multiprocessing import Manager, Process
 from os import makedirs
 from os.path import basename, dirname, exists, isfile, join
@@ -10,6 +11,7 @@ from tempfile import TemporaryDirectory
 import click
 import pandas as pd
 import templates as t
+from milp import Milp
 from builder import Infrastructure
 from intents import Intents 
 from pyswip import Prolog
@@ -119,11 +121,11 @@ class Experiment():
         self.variation_rate = variation_rate
         self.file = t.RESULTS_FILE.format(intents=self.intents.id, infr=self.infr.id, rate=self.variation_rate, timestamp=t.TIMESTAMP)
 
-        self.p_multiDips: Process = None
-        self.multiDips_results = Manager().list()
+        self.processes: dict[str, Process]= {}
+        self.results = Manager().list()
 
     def upload(self, file=None):
-        results = list(self.multiDips_results) 
+        results = list(self.results) 
         file = file if file else self.file
         if results:
             results = pd.DataFrame.from_records([r.__dict__ for r in results], index="id")
@@ -135,39 +137,61 @@ class Experiment():
         else:
             print("No results to upload.")
 
-    def terminate(self, i=None):
-        if self.p_multiDips.is_alive():
-            self.p_multiDips.terminate()
+    def terminate(self, process: Process, i=None):
+        if process.is_alive():
+            process.terminate()
             if i:
                 print(f"\tMulti dips failed at epoch {i+1}. (timeout)")
 
     def run(self):
         for i in range(self.epochs):
-            self.p_multiDips = Process(name=f"MultiDips", target=self.multiDips)
-                
-            self.p_multiDips.start()
-            self.p_multiDips.join(self.timeout)
+            
+            p_milp = Process(name=f"MILP", target=self.milp, args=(i,))
+            p_milp.start()
+            self.processes['milp'] = p_milp
 
-            self.terminate(i)
+            for (mode, weights) in product(t.RANK_MODE, t.HEURISTIC_WEIGHTS):
+                p_multiDips = Process(name=f"MultiDips", target=self.multiDips, args=(i, mode, weights,))
+                p_multiDips.start()
+                self.processes[f'({mode},{weights})'] = p_multiDips
+
+            for process in self.processes.values():
+                process.join(self.timeout)
+                self.terminate(process, i)
 
             print(f"Changing infrastructure {i}")
             self.infr.run(self.variation_rate)
             self.infr.upload()
   
         
-    def multiDips(self):
-        print("Starting heuristic search.")
+    def multiDips(self, i, mode, weight):
+        print(f"Starting heuristic search - {mode} - {weight}")
 
         multiDips = get_new_prolog_instance(self.intents.fileWrite, self.infr.file)
 
         try:
-            q_res = query(multiDips, t.MD_QUERY)
-            res = Result(1)
+            query_str = t.MD_QUERY.format(rank_mode=mode, heuristic_weight=weight)
+            q_res = query(multiDips, query_str)
+            res = Result(i, type=f"multiDips_{mode}_{weight}")
             res.set_results(q_res)
-            self.multiDips_results.append(res)
+            self.results.append(res)
             print("Heuristic search finished.")
         except StopIteration:
             print(f"\tHeuristic search failed.")
+
+    def milp(self, i):
+        print("Starting MILP search")
+        try:
+            milp = Milp(self.intents.fileWrite, self.infr.file)
+            milp.initialization()
+            milp_res = milp.solve()
+            res = Result(i, type="MILP")
+            res.set_results(milp_res)
+            self.results.append(res)
+            print("MILP search finished.")
+        except StopIteration:
+            print(f"\tMILP search failed.")
+
 
             
 @click.command()
@@ -209,8 +233,6 @@ def main(intents_size, infr_size, variation_rate, epochs, seed, timeout):
 
         
         exp = Experiment(infr=infr, intents=intents, epochs=epochs, timeout=timeout, variation_rate=variation_rate)
-        # atexit.register(exp.upload, file=t.TMP_RES_FILE.format(app=exp.app, infr=exp.infr.id, rate=exp.variation_rate, timestamp=t.TIMESTAMP))
-        atexit.register(exp.terminate)
         exp.run()
         exp.upload()
         

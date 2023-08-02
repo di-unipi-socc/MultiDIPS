@@ -1,15 +1,15 @@
 :- ['../dips.pl'].
-:- ['../src/infrastructureData.pl','../src/intentsData.pl'].
+%:- ['../src/infrastructureData.pl','../src/intentsData.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
 :- set_prolog_flag(stack_limit, 32 000 000 000).
 :- set_prolog_flag(last_call_optimisation, true).
 
 % Milp pre calculations
-milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_emissions, Carbon_ij, Profit_ij) :-
+milp(Nodes, Res_j, Layer_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_Energy, BW_emissions, Carbon_ij, Energy_ij, Profit_ij) :-
     % nodes infos
     findall((N, L, HWRes), node(N, L, HWRes), NodesInfos),
-    nodesInfo(NodesInfos, Nodes, Layer_j, Res_j, Power_j, Pue_j, ECost_j),
+    nodesInfo(NodesInfos, Nodes, Layer_j, Res_j),
     % vnfs infos
     findall(intent(StakeHolder, IntentId, NUsers, TargetId), intent(StakeHolder, IntentId, NUsers, TargetId), IntentList),
     vnfsInfos(IntentList, Vnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat),
@@ -21,28 +21,17 @@ milp(Nodes, Res_j, Layer_j, Power_j, Pue_j, ECost_j, Vnfs, OnlyVnfs, Dim_i, ReqH
     % BW emissions
     kWhPerMB(BW_Energy), averageGCI(BW_carbon_Intensity), BW_emissions is BW_Energy * BW_carbon_Intensity,
     % ij infos
-    ijInfos(OnlyVnfs, Dim_i, Nodes, Carbon_ij, Profit_ij).
+    ijInfos(OnlyVnfs, Dim_i, Nodes, Carbon_ij, Energy_ij, Profit_ij).
 
 
-nodesInfo([Node|T], Nodes, Layer_j, Res_j, Power_j, Pue_j, ECost_j) :-
-    nodesInfo(T, TmpNodes, TmpLayer_j, TmpRes_j, TmpPower_j, TmpPue_j, TmpEcost_j),
+nodesInfo([Node|T], Nodes, Layer_j, Res_j) :-
+    nodesInfo(T, TmpNodes, TmpLayer_j, TmpRes_j),
     % Nodes, Layer_j, Res_j
     Node = (N, L, HWRes),
     Nodes = [N|TmpNodes],
     Layer_j = [L|TmpLayer_j],
-    Res_j = [HWRes|TmpRes_j],
-    % Power_j
-    ramEnergyProfile(N, 1, RamE),
-    cpuEnergyProfile(N, 1, CpuE),
-    storageEnergyProfile(N, 1, StorE),
-    Power_j = [(RamE, CpuE, StorE)|TmpPower_j],
-    % Pue_J
-    pue(N, Pue),
-    Pue_j = [Pue|TmpPue_j],
-    % ECost_j
-    energyCost(N, ECost),
-    ECost_j = [ECost|TmpEcost_j].
-nodesInfo([], [], [], [], [], [], []).
+    Res_j = [HWRes|TmpRes_j].
+nodesInfo([], [], [], []).
 
 
 vnfsInfos([Intent|T], Vnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat) :-
@@ -131,19 +120,21 @@ onlyVnfs([(_,Vnfs)|T], OnlyVnfs) :-
 onlyVnfs([], []).
 
 
-ijInfos([Vnf|T1], [D|T2], Nodes, Carbon_ij, Profit_ij) :-
-    ijInfos(T1, T2, Nodes, TmpCarbon_ij, TmpProfit_ij),
-    jinfos(Nodes, Vnf, D, Carbon_j, Profit_j),
+ijInfos([Vnf|T1], [D|T2], Nodes, Carbon_ij, Energy_ij, Profit_ij) :-
+    ijInfos(T1, T2, Nodes, TmpCarbon_ij, TmpEnergy_ij, TmpProfit_ij),
+    jinfos(Nodes, Vnf, D, Carbon_j, Energy_j, Profit_j),
     Carbon_ij = [Carbon_j|TmpCarbon_ij],
+    Energy_ij = [Energy_j|TmpEnergy_ij],
     Profit_ij = [Profit_j|TmpProfit_ij].
-ijInfos([], [], _, [], []).
+ijInfos([], [], _, [], [], []).
 
-jinfos([N|T], Vnf, D, Carbon_j, Profit_j) :-
-    jinfos(T, Vnf, D, TmpCarbon_j, TmpProfit_j),
+jinfos([N|T], Vnf, D, Carbon_j, Energy_j, Profit_j) :-
+    jinfos(T, Vnf, D, TmpCarbon_j, TmpEnergy_j, TmpProfit_j),
     calculateEnergy(on(Vnf,D,N), Energy),
     energySourceMix(N, EnergySourceMix),
     calculateHWCarbon(EnergySourceMix, Energy, Carbon),
     Carbon_j = [Carbon|TmpCarbon_j],
+    Energy_j = [Energy|TmpEnergy_j],
     calculateProfit(on(Vnf,D,N), Energy, Profit),
     Profit_j = [Profit|TmpProfit_j].
-jinfos([], _, _, [], []).
+jinfos([], _, _, [], [], []).
