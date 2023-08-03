@@ -1,5 +1,4 @@
 :- ['../dips.pl'].
-%:- ['../src/infrastructureData.pl','../src/intentsData.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
 :- set_prolog_flag(stack_limit, 32 000 000 000).
@@ -94,7 +93,7 @@ findProp(IntentId, Prop, _, F2, Value) :-
     propValue(Prop, Value).
 
 propValue(bandwidth, 0).
-propValue(latency, 10000).
+propValue(latency, 100000).
 lastPropValue([(_,_,Value)|_], Value).
 lastPropValue([], end).
 

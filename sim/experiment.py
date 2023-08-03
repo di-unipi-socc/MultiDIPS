@@ -17,7 +17,7 @@ from intents import Intents
 from pyswip import Prolog
 from tabulate import tabulate as tbl
 
-TIMEOUT = 600 #seconds
+TIMEOUT = 10800 #seconds
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents, infr):
@@ -40,12 +40,12 @@ def df_to_file(df, file_path):
 
 
 class Result():
-    def __init__(self, rid: int, type: str = 'multiDips'):
+    def __init__(self, rid: int, type: str):
         self.id = rid
         self.type = type
         self.profit = 0
-        self.energy = 0
         self.carbon = 0
+        self.energy = 0
         self.placement = []
         self.failedP = 0
         self.allocbw = []
@@ -76,8 +76,8 @@ class Result():
     
     def set_results(self, res):
         self.profit     = res["Profit"]
-        self.energy     = res["Energy"]
         self.carbon     = res["Carbon"]
+        self.energy     = res["Energy"]
         self.placement  = res["Placement"]
         self.failedP    = self.countFail()
         self.allocbw    = res["AllocBW"]
@@ -96,8 +96,8 @@ class Result():
     def pretty_print(self):
         return tbl([['ID', self.id],
                     ["Inferences", self.inferences], ["Time", self.time],
-                    ["Profit", self.profit], ["Enegy", self.energy],
-                    ["Carbon", self.carbon],
+                    ["Profit", self.profit], ["Carbon", self.carbon],
+                    ["Energy", self.energy],
                     ["Placement", self.placement],
                     ["NumFailP", self.failedP],
                     ["AllocBW", self.allocbw],
@@ -149,7 +149,7 @@ class Experiment():
             p_milp = Process(name=f"MILP", target=self.milp, args=(i,))
             p_milp.start()
             self.processes['milp'] = p_milp
-
+            
             for (mode, weights) in product(t.RANK_MODE, t.HEURISTIC_WEIGHTS):
                 p_multiDips = Process(name=f"MultiDips", target=self.multiDips, args=(i, mode, weights,))
                 p_multiDips.start()
@@ -158,7 +158,6 @@ class Experiment():
             for process in self.processes.values():
                 process.join(self.timeout)
                 self.terminate(process, i)
-
             print(f"Changing infrastructure {i}")
             self.infr.run(self.variation_rate)
             self.infr.upload()
@@ -175,9 +174,9 @@ class Experiment():
             res = Result(i, type=f"multiDips_{mode}_{weight}")
             res.set_results(q_res)
             self.results.append(res)
-            print("Heuristic search finished.")
+            print(f"Heuristic search finished - {mode} - {weight}")
         except StopIteration:
-            print(f"\tHeuristic search failed.")
+            print(f"Heuristic search failed - {mode} - {weight}")
 
     def milp(self, i):
         print("Starting MILP search")
@@ -185,19 +184,19 @@ class Experiment():
             milp = Milp(self.intents.fileWrite, self.infr.file)
             milp.initialization()
             milp_res = milp.solve()
-            res = Result(i, type="MILP")
+            res = Result(i, type=f"MILP")
             res.set_results(milp_res)
             self.results.append(res)
             print("MILP search finished.")
         except StopIteration:
-            print(f"\tMILP search failed.")
+            print("MILP search failed.")
 
 
             
 @click.command()
 @click.argument("intents_size", type=int, nargs=1)
 @click.argument("infr_size", type=int, nargs=1)
-@click.argument('variation_rate', type=float, default=0.1)
+@click.argument('variation_rate', type=float, default=0.2)
 @click.option('--epochs', '-e', type=int, default=500, help="Number of epochs to run the experiment.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for the random number generator.")
 @click.option("--timeout", "-t", type=int, default=TIMEOUT, help="Timeout for each test.")
@@ -214,9 +213,11 @@ def main(intents_size, infr_size, variation_rate, epochs, seed, timeout):
         intents = Intents(size=intents_size, readPath=t.SRC_INTENT_DIR, writePath=tmpdir)
         intents_file = join(t.INTENTS_DIR, f"intents{intents_size}.pl")
 
-        intents.parse()
-        intents.upload()
+        if exists(intents_file):
+            copyfile(intents_file, join(tmpdir, basename(intents_file)))
         if not exists(intents_file):
+            intents.parse()
+            intents.upload()
             copyfile(intents.fileWrite, intents_file)
 
 

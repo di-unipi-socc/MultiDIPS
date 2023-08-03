@@ -9,6 +9,7 @@ import numpy as np
 import parse as p
 import templates as t
 from numpy import random as rnd
+from math import exp
 
 
 def get_random_sample(l, size=1):
@@ -71,17 +72,18 @@ class Node():
 	def fail(self):
 		return rnd.random() < self.fail_prob
 
-	def run(self, variation_rate, ramMax, cpuMax, storageMax):
+	def run(self, variation_rate):
 		if self.fail():
 			print("Fallito: " + self.id)
 			self.HWcaps = (0,0,0)
 		elif rnd.random() < variation_rate:
-			new_ramcap = min(round(rnd.uniform(self.baseHWcaps[0] * t.VARIATION["hw"]["lb"], self.baseHWcaps[0] * t.VARIATION["hw"]["ub"])), ramMax)
-			new_cpucap = min(round(rnd.uniform(self.baseHWcaps[1] * t.VARIATION["hw"]["lb"], self.baseHWcaps[1] * t.VARIATION["hw"]["ub"])), cpuMax)
-			new_storagecap = min(round(rnd.uniform(self.baseHWcaps[2] * t.VARIATION["hw"]["lb"], self.baseHWcaps[2] * t.VARIATION["hw"]["ub"])), storageMax)
+			new_ramcap = min(round(rnd.uniform(self.baseHWcaps[0] * t.VARIATION["hw"]["lb"], self.baseHWcaps[0] * t.VARIATION["hw"]["ub"])), self.totHW[0])
+			new_cpucap = min(round(rnd.uniform(self.baseHWcaps[1] * t.VARIATION["hw"]["lb"], self.baseHWcaps[1] * t.VARIATION["hw"]["ub"])), self.totHW[1])
+			new_storagecap = min(round(rnd.uniform(self.baseHWcaps[2] * t.VARIATION["hw"]["lb"], self.baseHWcaps[2] * t.VARIATION["hw"]["ub"])), self.totHW[2])
 			self.HWcaps = (new_ramcap, new_cpucap, new_storagecap)
-			self.mix = generate_energy_mix()
 
+	def reset(self):
+		self.HWcaps = (self.baseHWcaps[0], self.baseHWcaps[1], self.baseHWcaps[2])
 
 	def __str__(self):
 		d = self.__dict__.copy()
@@ -124,6 +126,10 @@ class Link():
 
 			new_bw  = max(1,round(rnd.uniform(self.baseBw * t.VARIATION["bw"]["lb"], self.baseBw * t.VARIATION["bw"]["ub"]), 4))
 			self.bw  = trunc_range(new_bw, minBw, maxBw)
+
+	def reset(self):
+		self.bw = self.baseBw
+		self.lat = self.baseLat
 
 	def __str__(self):
 		d = self.__dict__.copy()
@@ -176,10 +182,10 @@ class Infrastructure(nx.Graph):
 		for _, n in self.nodes(data="obj"):
 			if n.type == 'cloud': 
 				energyCap += t.MAX_ENERGY_PER_CLOUD_NODE 
-				emissCap += t.MAX_t.EMISSIONS_PER_CLOUD_NODE
+				emissCap += t.MAX_EMISSIONS_PER_CLOUD_NODE
 			else: 
 				energyCap += t.MAX_ENERGY_PER_EDGE_NODE
-				emissCap += t.MAX_t.EMISSIONS_PER_EDGE_NODE
+				emissCap += t.MAX_EMISSIONS_PER_EDGE_NODE
 		if self.gintentType=='footprint': cap_value = round(emissCap, 3) 
 		else: cap_value = round(energyCap, 3)
 		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=cap_value, unit=unit))
@@ -205,7 +211,7 @@ class Infrastructure(nx.Graph):
 			totCPUHW 	= rnd.randint(self._values[type]['totCPUHW']['lb'], self._values[type]['totCPUHW']['ub'])
 			totStorageHW 	= rnd.randint(self._values[type]['totStorageHW']['lb'], self._values[type]['totStorageHW']['ub'])
 
-			hwUsage = rnd.uniform(1.0,1.4)
+			hwUsage = rnd.uniform(1.0, t.MAX_HW_USAGE)
 			ramHWCap = int(totRamHW // hwUsage)
 			CPUHWCap = int(totCPUHW // hwUsage)
 			storageHWCap = int(totStorageHW // hwUsage)
@@ -221,11 +227,26 @@ class Infrastructure(nx.Graph):
 			pue 	= np.around(rnd.uniform(self._values[type]["pue"]["lb"], self._values[type]["pue"]["ub"]), 2)
 			mix 	= generate_energy_mix()
 
-			energyCost = np.around(rnd.uniform(self._values[type]['energyCost']['lb'], self._values[type]['energyCost']['ub']),3)
+			energyCost = self.calculate_energy_cost(type, mix)
 
 			self.add_node(Node(nid=nid, type=type, HWcaps=(ramHWCap, CPUHWCap, storageHWCap), totHW=(totRamHW, totCPUHW, totStorageHW), ramkWh=ramkWh,
 		      					CPUkWh=CPUkWh, storagekWh=storagekWh, pue=pue, energy_mix=mix, energyCost=energyCost))
-			
+
+	def calculate_energy_cost(self, type, mix):
+		min_energy_cost = self._values[type]['energyCost']['lb']
+		max_energy_cost = self._values[type]['energyCost']['ub']
+				
+		total_emissions = 0
+		for (prob, source) in mix:
+			total_emissions += prob * t.EMISSIONS[source]
+				
+		max_emission = max(t.EMISSIONS.values())
+		min_emission = min(t.EMISSIONS.values())
+		emissions_score = (total_emissions - min_emission) / (max_emission - min_emission)		# (0-1) lower is better
+		energyCost = (max_energy_cost * (1 - emissions_score) + min_energy_cost * emissions_score) * (0.6 ** emissions_score)
+		energyCost = np.around(max(energyCost, min_energy_cost), 3)
+		return energyCost
+				
 		
 	def _generate_links(self):		
 		for s, d in product(self.nodes, repeat=2):
@@ -235,23 +256,22 @@ class Infrastructure(nx.Graph):
 					lat = rnd.randint(self._values['link'][linkType]['lat']['lb'], self._values['link'][linkType]['lat']['ub'])
 					bw = rnd.randint(self._values['link'][linkType]['bw']['lb'], self._values['link'][linkType]['bw']['ub'])
 					self.add_link(Link(self.nodes[s]["obj"], self.nodes[d]["obj"], lat, bw))
-					#self.add_link(Link(self.nodes[d]["obj"], self.nodes[s]["obj"], lat, bw))
 		
 		# complete the graph with shortest path (Floyd Warshall algorithm)
-		sp = nx.floyd_warshall_numpy(self, weight="lat")
 		node_list = [n for n in self.nodes]
+		sp = nx.floyd_warshall_numpy(self, nodelist = node_list, weight="lat")
 		for s, d in product(self.nodes, repeat=2):
 			index_s = node_list.index(s)
 			index_d = node_list.index(d)
 			lat_sd = sp[index_s,index_d]
-			if s != d and (s,d) and (d,s) not in self.edges:
+			if s != d and (s,d) not in self.edges and (d,s) not in self.edges:
 				if lat_sd == np.inf: 
 					lat_sd = t.LAT_MAX_VALUE
 					bw = t.BW_MIN_VALUE
 				else:
+					linkType = self.linkType(s,d)
 					bw = rnd.randint(self._values['link'][linkType]['bw']['lb'], self._values['link'][linkType]['bw']['ub'])
 				self.add_link(Link(self.nodes[s]["obj"], self.nodes[d]["obj"], int(lat_sd), bw))
-				#self.add_link(Link(self.nodes[d]["obj"], self.nodes[s]["obj"], int(lat_sd), bw))
 			else:
 				nx.set_edge_attributes(self, {(s,d): {"lat": sp[index_s,index_d]}})
 
@@ -450,18 +470,29 @@ class Infrastructure(nx.Graph):
 
 	def run(self, variation_rate):
 		for _, n in self.nodes(data="obj"):
-			ramMax=self._values[n.type]['totRamHW']['ub']
-			cpuMax=self._values[n.type]['totCPUHW']['ub']
-			storageMax=self._values[n.type]['totStorageHW']['ub']
-			n.run(variation_rate, ramMax, cpuMax, storageMax) 
+			n.reset()
+			n.run(variation_rate) 
 		
 		for s,d,l in self.edges(data="obj"):
-			linkType=self.linkType(s,d)
+			l.reset()
+			linkType = self.linkType(s,d)
 			minLat = self._values['link'][linkType]['lat']['lb']
 			maxLat = self._values['link'][linkType]['lat']['ub']
 			minBw = self._values['link'][linkType]['bw']['lb']
 			maxBw = self._values['link'][linkType]['bw']['ub']
-			l.run(variation_rate, minLat, maxLat, minBw, maxBw)  
+			l.run(variation_rate, minLat, maxLat, minBw, maxBw)
+
+		# update latency (Floyd Warshall algorithm)
+		node_list = [n for n in self.nodes]
+		sp = nx.floyd_warshall_numpy(self, nodelist = node_list, weight="lat")
+		for s, d in product(self.nodes, repeat=2):
+			index_s = node_list.index(s)
+			index_d = node_list.index(d)
+			lat_sd = sp[index_s,index_d]
+			if lat_sd == np.inf: 
+				lat_sd = t.LAT_MAX_VALUE
+				nx.set_edge_attributes(self, {(s,d): {"bw": t.BW_MIN_VALUE}})  
+			nx.set_edge_attributes(self, {(s,d): {"lat": sp[index_s,index_d]}})
 
 	def reset(self):
 		reset_file = join(t.INFRS_DIR, f"{self.id}.pl")

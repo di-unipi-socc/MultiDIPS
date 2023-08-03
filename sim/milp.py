@@ -58,6 +58,7 @@ class Milp:
         self.energy = list(q_res["Energy_ij"])
         self.profit = list(q_res["Profit_ij"])
         self.initialization_time = process_time() - start_time
+        
 
     def calculatePropertyMatrix(self, size, prop_lists, prop_type):
         if prop_type == "bw":
@@ -185,7 +186,7 @@ class Milp:
             # lat
             for i, h in jk_dict.keys():
                 solver.Add(
-                    y_dictionary[j, k][i, h] * (self.link_lat[j][k] + self.lat[i]) <= self.lat_req[j][k],
+                    y_dictionary[j, k][i, h] * (self.link_lat[j][k] + self.lat[i]) <= self.lat_req[i][h],
                     name=f"lat_{j}_{k}"
                 )
 
@@ -200,8 +201,7 @@ class Milp:
             )
             + solver.Sum(
                 [
-                    y_dictionary[j, k][i, h]
-                    * (self.bw_req[i][h] * self.link_emissions(j,k))
+                    y_dictionary[j, k][i, h] * (self.bw_req[i][h] * self.link_emissions(j,k))
                     for j, k in y_dictionary.keys()
                     for i, h in y_dictionary[j, k].keys()
                 ]
@@ -229,8 +229,8 @@ class Milp:
         solution = {}
         # parse solution
         if status == pywraplp.Solver.OPTIMAL:
-            sol_placement = self.parse_placement(x)    
 
+            sol_placement = self.parse_placement(x)    
             sol_carbon = sum(
                 [
                     x[i, j].solution_value() * self.carbon[i][j]
@@ -244,7 +244,6 @@ class Milp:
                     for i, h in y_dictionary[j, k].keys()
                 ]
             )
-
             
             sol_energy = sum(
                 [
@@ -268,26 +267,24 @@ class Milp:
             solution["UnsatProps"] = "-"
             solution["Infs"] = 0
             solution["Time"] = self.initialization_time + solving_time
-
+            
             return solution
-
 
     def parse_placement(self, x):
         i = 0
         sol_placement = "["
         for intent_id, chain in self.vnfsChains:
-            sol_placement += '("' + str(intent_id) + '", [' 
+            sol_placement += '("' + str(intent_id) + '", [ ' 
             for _ in range(len(chain)):
                 for j,n in enumerate(self.nodes):
                     if x[i, j].solution_value():
                         sol_placement += (
-                                '"on(' + str(self.only_vnfs[i]) + ", " + str(self.vnfs_type[i]) + ", " + str(n) + ')", '
+                                '"on(' + str(self.only_vnfs[i]) + ", " + str(self.vnfs_type[i]) + ", " + str(n) + ')",'
                             )
                 i += 1
-            sol_placement = sol_placement[: len(sol_placement) - 2] + "]), "
-        sol_placement = sol_placement[: len(sol_placement) - 2] + "]"
+            sol_placement = sol_placement[: len(sol_placement) - 1] + "]),"
+        sol_placement = sol_placement[: len(sol_placement) - 1] + "]"
         return literal_eval(sol_placement)
-
 
 
 @click.command()
@@ -296,8 +293,8 @@ class Milp:
 def main(intents_file, infrf_file):
     milp = Milp(intents_file, infrf_file)
     milp.initialization()
-    milp.solve()
-
+    solution = milp.solve()
+    print(solution)
 
 if __name__ == "__main__":
     main()

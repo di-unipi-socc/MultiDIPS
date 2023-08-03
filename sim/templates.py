@@ -5,20 +5,21 @@ from pyswip import Atom, Functor
 # --- INFRASTRACTURES CONSTANTS ---
 LAT_MAX_VALUE = 100000
 BW_MIN_VALUE = 0
-FAIL_PROB = 0.01
-LINK_PROBABILITY = 0.2
+FAIL_PROB = 0.03
+LINK_PROBABILITY = 0.4
 EDGE_PRICE = (0.030, 0.060, 0.00050)
 CLOUD_PRICE = (0.015, 0.030, 0.00025)
 GCI_VALUE = 0.475
 KWH_PER_MB_VALUE = 0.00008
-MAX_EMISSIONS_PER_EDGE_NODE = 0.060
-MAX_EMISSIONS_PER_CLOUD_NODE = 0.180
-MAX_ENERGY_PER_EDGE_NODE = 0.130
-MAX_ENERGY_PER_CLOUD_NODE = 0.400
+MAX_EMISSIONS_PER_EDGE_NODE = 0.050
+MAX_EMISSIONS_PER_CLOUD_NODE = 0.150
+MAX_ENERGY_PER_EDGE_NODE = 0.120
+MAX_ENERGY_PER_CLOUD_NODE = 0.390
 RESOURCES_TYPES = ["RAM", "CPU", "STORAGE"]
 TYPES   = ['cloud', 'edge']
-PROBS   = [0.35, 0.65]
-VARIATION = {'hw': {'lb': 0.1, 'ub': 1.2}, 'lat': {'lb': 0.6, 'ub': 1.6}, 'bw': {'lb': 0.3, 'ub': 1.1}}
+PROBS   = [0.25, 0.75]
+MAX_HW_USAGE = 1.35
+VARIATION = {'hw': {'lb': 0.3, 'ub': 1.2}, 'lat': {'lb': 0.7, 'ub': 1.6}, 'bw': {'lb': 0.3, 'ub': 1.2}}
 INFR_CHANGING_PROPERTIES = [('logging', 'logVF'), ('privacy', 'encVF'), ('security', 'authVF'), ('caching', 'cacheVF'), ('compression', 'compVF'), ('encoding', 'encodeVF')]
 INFR_DISC_PREDICATES = {'node': 3, 'totHW': 2, 'pue': 2, 'ramEnergyProfile': 3, 'cpuEnergyProfile': 3, 'storageEnergyProfile': 3, 'energySourceMix': 2, 'energyCost': 2}
 EMISSIONS = {'gas': 0.610, 'coal': 1.1, 'onshorewind': 0.0097, 'offshorewind': 0.0165, 'solar': 0.05}
@@ -83,7 +84,7 @@ VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 # --- QUERY TEMPLATES ---
 RANK_MODE = [1, 2, 3, 4]
 HEURISTIC_WEIGHTS = [(100, 0, 0), (0, 100, 0), (0, 0, 100), (1 / 3, 1 / 3, 1 / 3)]
-MD_QUERY = "testMultiDips({rank_mode}, {heuristic_weight}, Profit, Energy, Carbon, Placement, AllocBW, UnsatProps, Infs, Time)."
+MD_QUERY = "testMultiDips({rank_mode}, {heuristic_weight}, Profit, Carbon, Energy, Placement, AllocBW, UnsatProps, Infs, Time)."
 MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_Energy, BW_emissions, Carbon_ij, Energy_ij, Profit_ij)."
 
 # --- PARSE UTILITY FUNCTIONS ---

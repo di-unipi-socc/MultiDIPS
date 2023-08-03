@@ -18,10 +18,10 @@ propertyExpectation(gsIntent, logging, cloud, cloudGamingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(gsIntent, bandwidth, larger, hard, 20, megabps, start, edgeGamingVF).
+propertyExpectation(gsIntent, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent, latency, smaller, hard, 55, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent, latency, smaller, hard, 50, ms, start, edgeGamingVF).
 
 
 /* TARGET-DEPENDENT MODEL */
@@ -62,7 +62,6 @@ propertyExpectation(ssIntent, compression, cloud, cloudStreamingVF, _).
 propertyExpectation(ssIntent, bandwidth, larger, hard, 20, megabps, start, edgeStreamingVF).
 propertyExpectation(ssIntent, bandwidth, larger, hard, 60, megabps, edgeStreamingVF, cloudStreamingVF).
 propertyExpectation(ssIntent, bandwidth, larger, hard, 1, megabps, cloudStreamingVF, end).
-propertyExpectation(ssIntent, latency, smaller, soft, 30, ms, start, edgeStreamingVF).
 
 
 /* TARGET-DEPENDENT MODEL */
@@ -100,10 +99,10 @@ propertyExpectation(hbIntent, logging, cloud, cloudHomeBankingVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(hbIntent, bandwidth, larger, hard, 5, megabps, start, edgeHomeBankingVF).              
-propertyExpectation(hbIntent, bandwidth, larger, hard, 10, megabps, edgeHomeBankingVF, cloudHomeBankingVF).
+propertyExpectation(hbIntent, bandwidth, larger, hard, 10, megabps, start, edgeHomeBankingVF).              
+propertyExpectation(hbIntent, bandwidth, larger, hard, 30, megabps, edgeHomeBankingVF, cloudHomeBankingVF).
 propertyExpectation(hbIntent, bandwidth, larger, hard, 1, megabps, cloudHomeBankingVF, end).
-propertyExpectation(hbIntent, latency, smaller, soft, 190, ms, edgeHomeBankingVF, cloudHomeBankingVF).
+propertyExpectation(hbIntent, latency, smaller, hard, 50, ms, authVF, cloudHomeBankingVF).
 
 
 /* TARGET-DEPENDENT MODEL */
@@ -144,8 +143,8 @@ propertyExpectation(csIntent, security, edge, cloudStorageVF, _).
 
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
-propertyExpectation(csIntent, bandwidth, larger, hard, 15, megabps, start, cloudStorageVF).
-propertyExpectation(csIntent, bandwidth, larger, hard, 15, megabps, cloudStorageVF, end).
+propertyExpectation(csIntent, bandwidth, larger, hard, 30, megabps, start, cloudStorageVF).
+propertyExpectation(csIntent, bandwidth, larger, hard, 10, megabps, cloudStorageVF, end).
 
 
 /* TARGET-DEPENDENT MODEL */
@@ -177,8 +176,9 @@ propertyExpectation(srIntent, caching, edge, _, edgeDataCollecting).
 % Non-changing property
 % propertyExpectation(IntentID, Property, Bound, Level, Value, Unit, From, To).
 propertyExpectation(srIntent, bandwidth, larger, hard, 5, megabps, start, edgeDataCollecting).
-propertyExpectation(srIntent, bandwidth, larger, hard, 10, megabps, edgeDataCollecting, cloudDataAnalysis).
+propertyExpectation(srIntent, bandwidth, larger, hard, 30, megabps, edgeDataCollecting, cloudDataAnalysis).
 propertyExpectation(srIntent, bandwidth, larger, hard, 5, megabps, cloudDataAnalysis, end).
+propertyExpectation(srIntent, latency, smaller, soft, 100, ms, cacheVF, cloudDataAnalysis).
 
 
 /* TARGET-DEPENDENT MODEL */
