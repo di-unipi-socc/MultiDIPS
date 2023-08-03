@@ -129,7 +129,7 @@ class Experiment():
         file = file if file else self.file
         if results:
             results = pd.DataFrame.from_records([r.__dict__ for r in results], index="id")
-            [results.pop(f) for f in ['placement', 'allocbw']]
+            [results.pop(f) for f in ['placement', 'unsatprops', 'allocbw']]
             results["numIntents"] = self.intents._size
             results["size"] = self.infr._size
             results["rate"] = self.variation_rate
@@ -158,13 +158,13 @@ class Experiment():
             for process in self.processes.values():
                 process.join(self.timeout)
                 self.terminate(process, i)
-            print(f"Changing infrastructure {i}")
+            #print(f"Changing infrastructure {i}")
             self.infr.run(self.variation_rate)
             self.infr.upload()
   
         
     def multiDips(self, i, mode, weight):
-        print(f"Starting heuristic search - {mode} - {weight}")
+        #print(f"Starting heuristic search - {mode} - {weight}")
 
         multiDips = get_new_prolog_instance(self.intents.fileWrite, self.infr.file)
 
@@ -174,12 +174,12 @@ class Experiment():
             res = Result(i, type=f"multiDips_{mode}_{weight}")
             res.set_results(q_res)
             self.results.append(res)
-            print(f"Heuristic search finished - {mode} - {weight}")
+            #print(f"Heuristic search finished - {mode} - {weight}")
         except StopIteration:
             print(f"Heuristic search failed - {mode} - {weight}")
 
     def milp(self, i):
-        print("Starting MILP search")
+        #print("Starting MILP search")
         try:
             milp = Milp(self.intents.fileWrite, self.infr.file)
             milp.initialization()
@@ -187,7 +187,7 @@ class Experiment():
             res = Result(i, type=f"MILP")
             res.set_results(milp_res)
             self.results.append(res)
-            print("MILP search finished.")
+            #print("MILP search finished.")
         except StopIteration:
             print("MILP search failed.")
 

@@ -74,7 +74,7 @@ class Node():
 
 	def run(self, variation_rate):
 		if self.fail():
-			print("Fallito: " + self.id)
+			#print("Failed: " + self.id)
 			self.HWcaps = (0,0,0)
 		elif rnd.random() < variation_rate:
 			new_ramcap = min(round(rnd.uniform(self.baseHWcaps[0] * t.VARIATION["hw"]["lb"], self.baseHWcaps[0] * t.VARIATION["hw"]["ub"])), self.totHW[0])
@@ -117,7 +117,7 @@ class Link():
 
 	def run(self, variation_rate, minLat, maxLat, minBw, maxBw):
 		if self.fail():
-			print("Fallito: " + self.source.id + " - "+ self.dest.id)
+			#print("Failed: " + self.source.id + " - "+ self.dest.id)
 			self.lat = 10000
 			self.bw  = 0
 		elif rnd.random() < variation_rate:
