@@ -17,7 +17,7 @@ from intents import Intents
 from pyswip import Prolog
 from tabulate import tabulate as tbl
 
-TIMEOUT = 10800 #seconds
+TIMEOUT = 3600 #seconds
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents, infr):
@@ -112,7 +112,7 @@ class Result():
             
 
 class Experiment():
-    def __init__(self, infr: Infrastructure, intents: Intents, epochs: int = 600, timeout: int = TIMEOUT, variation_rate: float = 0.1):
+    def __init__(self, infr: Infrastructure, intents: Intents, epochs: int = 100, timeout: int = TIMEOUT, variation_rate: float = 0.2):
         
         self.infr = infr
         self.intents = intents

@@ -11,6 +11,8 @@ import templates as t
 from numpy import random as rnd
 from math import exp
 
+from time import sleep
+
 
 def get_random_sample(l, size=1):
 	return list(rnd.choice(l, size=size, replace=False))
@@ -121,10 +123,10 @@ class Link():
 			self.lat = 10000
 			self.bw  = 0
 		elif rnd.random() < variation_rate:
-			new_lat = round(rnd.uniform(self.baseLat * t.VARIATION["lat"]["lb"], self.baseLat * t.VARIATION["lat"]["ub"]), 4)
+			new_lat = round(rnd.uniform(self.baseLat * t.VARIATION["lat"]["lb"], self.baseLat * t.VARIATION["lat"]["ub"]))
 			self.lat = trunc_range(new_lat, minLat, maxLat)
 
-			new_bw  = max(1,round(rnd.uniform(self.baseBw * t.VARIATION["bw"]["lb"], self.baseBw * t.VARIATION["bw"]["ub"]), 4))
+			new_bw  = max(1,round(rnd.uniform(self.baseBw * t.VARIATION["bw"]["lb"], self.baseBw * t.VARIATION["bw"]["ub"])))
 			self.bw  = trunc_range(new_bw, minBw, maxBw)
 
 	def reset(self):
@@ -271,9 +273,18 @@ class Infrastructure(nx.Graph):
 				else:
 					linkType = self.linkType(s,d)
 					bw = rnd.randint(self._values['link'][linkType]['bw']['lb'], self._values['link'][linkType]['bw']['ub'])
-				self.add_link(Link(self.nodes[s]["obj"], self.nodes[d]["obj"], int(lat_sd), bw))
+				self.add_link(Link(self.nodes[s]["obj"], self.nodes[d]["obj"], int(lat_sd), int(bw)))
 			else:
-				nx.set_edge_attributes(self, {(s,d): {"lat": sp[index_s,index_d]}})
+				if s != d and (s,d) in self.edges:
+					if lat_sd == np.inf: 
+						lat_sd = t.LAT_MAX_VALUE
+						self.edges[s,d]["obj"].bw = int(t.BW_MIN_VALUE)
+					self.edges[s,d]["obj"].lat = int(lat_sd)
+				elif s != d and (d,s) in self.edges:
+					if lat_sd == np.inf: 
+						lat_sd = t.LAT_MAX_VALUE
+						self.edges[d,s]["obj"].bw = int(t.BW_MIN_VALUE)
+					self.edges[d,s]["obj"].lat = int(lat_sd)
 
 
 	def linkType(self,s,d):
@@ -489,10 +500,11 @@ class Infrastructure(nx.Graph):
 			index_s = node_list.index(s)
 			index_d = node_list.index(d)
 			lat_sd = sp[index_s,index_d]
-			if lat_sd == np.inf: 
-				lat_sd = t.LAT_MAX_VALUE
-				nx.set_edge_attributes(self, {(s,d): {"bw": t.BW_MIN_VALUE}})  
-			nx.set_edge_attributes(self, {(s,d): {"lat": sp[index_s,index_d]}})
+			if (s,d) in self.edges:
+				if lat_sd == np.inf: 
+					lat_sd = t.LAT_MAX_VALUE
+					self.edges[s,d]["obj"].bw = int(t.BW_MIN_VALUE)
+				self.edges[s,d]["obj"].lat = int(lat_sd)
 
 	def reset(self):
 		reset_file = join(t.INFRS_DIR, f"{self.id}.pl")
