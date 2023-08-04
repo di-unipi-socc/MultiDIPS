@@ -13,7 +13,7 @@ propertyExpectation(gsIntent1, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent1, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent1, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent1, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent1, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent1, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(homeBankingOp2, hbIntent2, 5000, homeBankingService).
 
@@ -34,7 +34,7 @@ propertyExpectation(gsIntent3, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent3, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent3, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent3, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent3, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent3, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(streamAppOp4, ssIntent4, 2000, streamingService).
 
@@ -52,7 +52,7 @@ propertyExpectation(gsIntent5, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent5, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent5, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent5, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent5, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent5, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(cloudStorageOp6, csIntent6, 500, cloudStorageService).
 
@@ -69,7 +69,7 @@ propertyExpectation(gsIntent7, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent7, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent7, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent7, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent7, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent7, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(smartRoadOp8, srIntent8, 10000, smartRoadService).
 
@@ -117,7 +117,7 @@ propertyExpectation(gsIntent13, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent13, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent13, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent13, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent13, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent13, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(smartRoadOp14, srIntent14, 10000, smartRoadService).
 
@@ -199,7 +199,7 @@ propertyExpectation(gsIntent22, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent22, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent22, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent22, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent22, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent22, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(cloudStorageOp23, csIntent23, 500, cloudStorageService).
 
@@ -238,7 +238,7 @@ propertyExpectation(gsIntent26, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent26, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent26, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent26, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent26, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent26, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(cloudStorageOp27, csIntent27, 500, cloudStorageService).
 
@@ -263,7 +263,7 @@ propertyExpectation(gsIntent29, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent29, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent29, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent29, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent29, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent29, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(gameAppOp30, gsIntent30, 3000, gamingService).
 
@@ -273,7 +273,7 @@ propertyExpectation(gsIntent30, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent30, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent30, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent30, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent30, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent30, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(homeBankingOp31, hbIntent31, 5000, homeBankingService).
 
@@ -315,7 +315,7 @@ propertyExpectation(gsIntent35, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent35, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent35, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent35, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent35, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent35, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(gameAppOp36, gsIntent36, 3000, gamingService).
 
@@ -325,7 +325,7 @@ propertyExpectation(gsIntent36, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent36, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent36, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent36, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent36, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent36, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(homeBankingOp37, hbIntent37, 5000, homeBankingService).
 
@@ -362,7 +362,7 @@ propertyExpectation(gsIntent40, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent40, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent40, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent40, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent40, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent40, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(cloudStorageOp41, csIntent41, 500, cloudStorageService).
 
@@ -395,7 +395,7 @@ propertyExpectation(gsIntent44, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent44, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent44, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent44, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent44, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent44, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(streamAppOp45, ssIntent45, 2000, streamingService).
 
@@ -424,7 +424,7 @@ propertyExpectation(gsIntent47, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent47, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent47, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent47, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent47, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent47, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(homeBankingOp48, hbIntent48, 5000, homeBankingService).
 

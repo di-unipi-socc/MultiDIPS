@@ -36,7 +36,7 @@ propertyExpectation(gsIntent4, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent4, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent4, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent4, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent4, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent4, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(homeBankingOp5, hbIntent5, 5000, homeBankingService).
 

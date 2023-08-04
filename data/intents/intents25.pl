@@ -155,7 +155,7 @@ propertyExpectation(gsIntent17, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent17, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent17, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent17, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent17, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent17, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(gameAppOp18, gsIntent18, 3000, gamingService).
 
@@ -165,7 +165,7 @@ propertyExpectation(gsIntent18, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent18, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent18, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent18, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent18, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent18, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(gameAppOp19, gsIntent19, 3000, gamingService).
 
@@ -175,7 +175,7 @@ propertyExpectation(gsIntent19, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent19, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent19, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent19, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent19, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent19, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 intent(streamAppOp20, ssIntent20, 2000, streamingService).
 
