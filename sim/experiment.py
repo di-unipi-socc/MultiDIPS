@@ -48,7 +48,6 @@ class Result():
         self.energy = 0
         self.placement = []
         self.failedP = 0
-        self.allocbw = []
         self.unsatprops = []
         self.inferences = 0
         self.time = 0
@@ -66,10 +65,7 @@ class Result():
         return self.placement
     
     def get_failedP(self):
-        return self.failedP
-    
-    def get_allocbw(self):
-        return self.allocbw     
+        return self.failedP  
     
     def get_unsatprops(self):
         return self.unsatprops   
@@ -80,7 +76,6 @@ class Result():
         self.energy     = res["Energy"]
         self.placement  = res["Placement"]
         self.failedP    = self.countFail()
-        self.allocbw    = res["AllocBW"]
         self.unsatprops = res["UnsatProps"]
 
         self.inferences = int(res["Infs"])
@@ -100,7 +95,6 @@ class Result():
                     ["Energy", self.energy],
                     ["Placement", self.placement],
                     ["NumFailP", self.failedP],
-                    ["AllocBW", self.allocbw],
                     ["UnsatProps", self.unsatprops]],
                     headers=["Metric", "Value"])
 
