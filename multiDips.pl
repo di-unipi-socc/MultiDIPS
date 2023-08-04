@@ -12,18 +12,26 @@ multiDips(RankMode, Output) :-
     StartingPInfo = info(0, 0, 0, [], [], []),
     callDips(OrderedIntentList, GlobProps, StartingPInfo, Output).
 
+/*
 callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    validPlacement(Intent, GlobProps, OldPsInfo, PInfo),             
+    validPlacement(Intent, GlobProps, OldPsInfo, PInfo), 
     mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
     callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
 callDips([], _, NewPsInfo, NewPsInfo).
 
 callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
     \+ validPlacement(Intent, GlobProps, OldPsInfo, _),
-    empty(Intent, PInfo),             
+    empty(Intent, PInfo), 
     mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
     callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
+*/
+
+callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+    (validPlacement(Intent, GlobProps, OldPsInfo, PInfo) -> true; empty(Intent, PInfo)),
+    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
+    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
+callDips([], _, NewPsInfo, NewPsInfo).
 
 validPlacement(Intent, GlobProps, OldPsInfo, PInfo):-
-    dips(Intent, OldPsInfo, PInfo),     
+    dips(Intent, OldPsInfo, PInfo),
     checkGlobalProperties(GlobProps, OldPsInfo, PInfo).

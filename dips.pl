@@ -1,10 +1,9 @@
 :-['src/properties.pl','src/rank.pl','src/utils.pl']. 
-%:- ['src/infrastructureData.pl','src/intentsData.pl'].
 
 dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
     OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
     chainForIntent(IntentId, TargetId, Chain),
-    dimensionedChain(Chain, NUsers, DimChain),      
+    dimensionedChain(Chain, NUsers, DimChain),
     placedChain(DimChain, IntentId, OldPs, AllocBW, P),
     checkPlacement(IntentId, P, AllocBW, OldAllocBW, UnsatProp),
     findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo).
@@ -38,12 +37,12 @@ completedChain(_, [], Chain, Chain).
 dimensionedChain(Chain, NUsers, DimChain) :- 
     dimensionedChain(Chain, NUsers, [], DimChain).
 dimensionedChain([(F,A)|Zs], U, OldC, NewC) :- 
-    vnfXUser(F, D, (L, H), _), between(L, H, U),  dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
+    vnfXUser(F, D, (L, H), _), between(L, H, U), dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
 dimensionedChain([], _, Chain, Chain).
 
 
 placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
-    findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, OldPs, SortedNodes),                   
+    findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, OldPs, SortedNodes),
     placedChain(DimChain, IntentId, OldPs, SortedNodes, [], [], AllAllocBW, P),
     filterAllocBW(AllAllocBW, AllocBW).
 placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, OldAllocBW, OldP, AllocBW, NewP) :-

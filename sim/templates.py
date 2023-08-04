@@ -84,7 +84,7 @@ VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 # --- QUERY TEMPLATES ---
 RANK_MODE = [1, 2, 3, 4]
 HEURISTIC_WEIGHTS = [(100, 0, 0), (0, 100, 0), (0, 0, 100), (1 / 3, 1 / 3, 1 / 3)]
-MD_QUERY = "testMultiDips({rank_mode}, {heuristic_weight}, Profit, Carbon, Energy, Placement, AllocBW, UnsatProps, Infs, Time)."
+MD_QUERY = "testMultiDips({rank_mode}, {heuristic_weight}, Profit, Carbon, Energy, Placement, UnsatProps, Infs, Time)."
 MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_Energy, BW_emissions, Carbon_ij, Energy_ij, Profit_ij)."
 
 # --- PARSE UTILITY FUNCTIONS ---

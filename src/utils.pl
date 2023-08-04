@@ -10,8 +10,8 @@ pathLat([on(From,_,N),on(Y,_,M)|Zs], From, To, _, NewLat) :- link(N, M, Lat, _),
 pathLat([on(From,_,N)], From, To, OldLat, NewLat) :- link(N, To, Lat, _), node(N, L, _), vnf(From, L, PTime), NewLat is OldLat + Lat + PTime. % To is a node
 
 pathLat2([on(X,_,N),on(Y,_,M)|Zs], To, OldLat, NewLat) :- dif(X, To), link(N, M, Lat,_), node(N, L, _), vnf(X, L, PTime), TmpLat is OldLat + Lat + PTime, pathLat2([on(Y,_,M)|Zs], To, TmpLat, NewLat).
-pathLat2([on(X,_,N)], To, OldLat, NewLat) :- link(N, To, Lat, _), node(N, L, _), vnf(X, L, PTime), NewLat is OldLat + Lat + PTime. % To is a node (must be at the end of the chain)
-pathLat2([on(To,_,N)|_], To, TmpLat, NewLat) :-  node(N, L, _), vnf(To, L, PTime), NewLat is TmpLat + PTime. % To is a VNF
+pathLat2([on(X,_,N)], To, OldLat, NewLat) :- link(N, To, Lat, _), node(N, L, _), vnf(X, L, PTime), NewLat is OldLat + Lat + PTime.  % To is a node (must be at the end of the chain)
+pathLat2([on(To,_,N)|_], To, TmpLat, NewLat) :- node(N, L, _), vnf(To, L, PTime), NewLat is TmpLat + PTime.  % To is a VNF
 
 addedAtEdge([X,Y|Zs], G, [X|NewZs]) :- X = (_, cloud), addedAtEdge([Y|Zs], G, NewZs).
 addedAtEdge([X,Y|Zs], G, [G,X|NewZs]) :- X = (_, edge), addedAtEdge2([Y|Zs], G, NewZs).
@@ -53,14 +53,12 @@ placementPath([on(_,_,_)],[]).
 
 nodeToNodeBW(_, _, [], NewAllocBW, NewAllocBW).
 nodeToNodeBW(IntentId, N, P, [], [(N, M, BWValue)]) :- 
-    P = [on(F, _, M)|_],  
+    P = [on(F, _, M)|_],
     findReqBW(IntentId, F, start, BWValue). 
 nodeToNodeBW(IntentId, N, P, OldAllocBW, [(N, M, BWValue)|OldAllocBW]) :-
     P = [on(F, _, M)|_], 
     OldAllocBW = [(_,_,OldBWValue)|_],
     findReqBW(IntentId, F, OldBWValue, BWValue). 
-nodeToNodeBW(_, N, P, NewAllocBW, NewAllocBW) :-
-    P = [on(_, _, N)|_].
 
 findReqBW(IntentId, F, start, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _, S, end), dif(F,S).
 findReqBW(IntentId, F, _, NewBWValue) :- propertyExpectation(IntentId, bandwidth, _,_, NewBWValue, _,_, F).
@@ -106,7 +104,7 @@ nodeMinMax(Nodes, Ps, Min, Max) :-
     findall(Emissions, emissions(_,Emissions), AllEmissions),
     findall(FreeHWScore, (member(N, Nodes), freeHWScore(N, Ps, FreeHWScore)), AllFreeHWScore),
     min_list(AllUnitCost, MinUnitCost), 
-    min_list(AllEmissions, MinEmissions),  
+    min_list(AllEmissions, MinEmissions),
     min_list(AllFreeHWScore, MinFreeHWScore),
     max_list(AllUnitCost, MaxUnitCost), 
     max_list(AllEmissions, MaxEmissions),
