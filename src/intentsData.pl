@@ -21,7 +21,7 @@ propertyExpectation(gsIntent, logging, cloud, cloudGamingVF, _).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 40, megabps, start, edgeGamingVF).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 80, megabps, edgeGamingVF, cloudGamingVF).
 propertyExpectation(gsIntent, bandwidth, larger, hard, 5, megabps, cloudGamingVF, end).
-propertyExpectation(gsIntent, latency, smaller, hard, 50, ms, start, edgeGamingVF).
+propertyExpectation(gsIntent, latency, smaller, hard, 50, ms, encVF, edgeGamingVF).
 
 
 /* TARGET-DEPENDENT MODEL */
