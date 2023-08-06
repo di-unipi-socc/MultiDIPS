@@ -87,7 +87,7 @@ class Milp:
 
     def solve(self):
         start_time = process_time()
-        solver = pywraplp.Solver.CreateSolver("SCIP")
+        solver = pywraplp.Solver.CreateSolver('GUROBI')
 
         # variable: placement variable
         x = {
@@ -171,6 +171,7 @@ class Milp:
                 i += 1
 
         # constraints: bw and lat
+        
         for j, k in y_dictionary.keys():
             jk_dict: dict = y_dictionary[j, k]
             # bw
@@ -189,8 +190,9 @@ class Milp:
                     y_dictionary[j, k][i, h] * (self.link_lat[j][k] + self.lat[i]) <= self.lat_req[i][h],
                     name=f"lat_{j}_{k}"
                 )
-
+        
         # constraint: max carbon emissions
+        
         solver.Add(
             solver.Sum(
                 [
@@ -209,7 +211,7 @@ class Milp:
             <= self.max_emissions,
             name=f"maxCarbonEmissions",
         )
-
+        
         # objective function
         solver.Maximize(
             solver.Sum(
@@ -221,9 +223,10 @@ class Milp:
             )
         )
 
+        # print(solver.NumConstraints())
+
         # solving
         status = solver.Solve()
-
         solving_time = process_time() - start_time
 
         solution = {}
@@ -263,7 +266,6 @@ class Milp:
             solution["Profit"] = solver.Objective().Value()
             solution["Carbon"] = sol_carbon
             solution["Energy"] = sol_energy
-            solution["AllocBW"] = "-"
             solution["UnsatProps"] = "-"
             solution["Infs"] = 0
             solution["Time"] = self.initialization_time + solving_time
