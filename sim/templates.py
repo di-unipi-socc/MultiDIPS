@@ -15,6 +15,7 @@ MAX_EMISSIONS_PER_EDGE_NODE = 0.070
 MAX_EMISSIONS_PER_CLOUD_NODE = 0.180
 MAX_ENERGY_PER_EDGE_NODE = 0.120
 MAX_ENERGY_PER_CLOUD_NODE = 0.390
+LOW_REDUCTION = 2.3
 RESOURCES_TYPES = ["RAM", "CPU", "STORAGE"]
 TYPES   = ['cloud', 'edge']
 PROBS   = [0.25, 0.75]
@@ -41,11 +42,14 @@ VALUES_FILE = join(SIM_DIR, "values.json")
 SIM_PL_FILE = join(SIM_DIR, "sim.pl")
 MILP_PL_FILE = join(SIM_DIR, "milp.pl")
 RESULTS_FILE = join(RESULTS_DIR, "{intents}-{infr}-{rate}-{timestamp}.csv")
+LOW_RESULT_FILE = join(RESULTS_DIR, "low-{intents}-{infr}-{rate}-{timestamp}.csv")
 TMP_RES_FILE = join(RESULTS_DIR, "{intents}-{infr}-{timestamp}-tmp.csv")
 ALL_RESULTS = RESULTS_FILE.format(intents="*", infr="*", rate="*", timestamp="*")
 
 PLOT_FORMAT = "pdf"
+TXT_FORMAT = "txt"
 PLOT_PATH = join(PLOTS_DIR, "{name}." + PLOT_FORMAT)
+TXT_PATH = join(PLOTS_DIR, "{name}." + TXT_FORMAT)
 PLOT_DPI = 600
 
 # --- GENERAL INFO TEMPLATES ---
@@ -83,7 +87,7 @@ VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 
 # --- QUERY TEMPLATES ---
 RANK_MODE = [1, 2, 3, 4]
-HEURISTIC_WEIGHTS = [(100, 0, 0), (0, 100, 0), (0, 0, 100), (1 / 3, 1 / 3, 1 / 3)]
+HEURISTIC_WEIGHTS = [(100, 0, 0), (0, 100, 0), (0, 0, 100), (33.33, 33.33, 33.33)]
 MD_QUERY = "testMultiDips({rank_mode}, {heuristic_weight}, Profit, Carbon, Energy, Placement, UnsatProps, Infs, Time)."
 MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_Energy, BW_emissions, Carbon_ij, Energy_ij, Profit_ij)."
 

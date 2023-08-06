@@ -1,6 +1,3 @@
-import atexit
-import glob
-import time
 from itertools import product 
 from multiprocessing import Manager, Process
 from os import makedirs
@@ -11,13 +8,13 @@ from tempfile import TemporaryDirectory
 import click
 import pandas as pd
 import templates as t
-from milp import Milp
+from milp_mod import Milp
 from builder import Infrastructure
 from intents import Intents 
 from pyswip import Prolog
 from tabulate import tabulate as tbl
 
-TIMEOUT = 3600 #seconds
+TIMEOUT = 10800 #seconds
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents, infr):
@@ -106,14 +103,17 @@ class Result():
             
 
 class Experiment():
-    def __init__(self, infr: Infrastructure, intents: Intents, epochs: int = 100, timeout: int = TIMEOUT, variation_rate: float = 0.2):
+    def __init__(self, infr: Infrastructure, intents: Intents, epochs: int = 100, timeout: int = TIMEOUT, variation_rate: float = 0.2, low: int = False):
         
         self.infr = infr
         self.intents = intents
         self.epochs = epochs
         self.timeout = timeout
         self.variation_rate = variation_rate
-        self.file = t.RESULTS_FILE.format(intents=self.intents.id, infr=self.infr.id, rate=self.variation_rate, timestamp=t.TIMESTAMP)
+        if low:
+            self.file = t.LOW_RESULT_FILE.format(intents=self.intents.id, infr=self.infr.id, rate=self.variation_rate, timestamp=t.TIMESTAMP)
+        else:
+            self.file = t.RESULTS_FILE.format(intents=self.intents.id, infr=self.infr.id, rate=self.variation_rate, timestamp=t.TIMESTAMP)
 
         self.processes: dict[str, Process]= {}
         self.results = Manager().list()
@@ -191,12 +191,13 @@ class Experiment():
 @click.argument("intents_size", type=int, nargs=1)
 @click.argument("infr_size", type=int, nargs=1)
 @click.argument('variation_rate', type=float, default=0.2)
-@click.option('--epochs', '-e', type=int, default=500, help="Number of epochs to run the experiment.")
+@click.option('--epochs', '-e', type=int, default=50, help="Number of epochs to run the experiment.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for the random number generator.")
 @click.option("--timeout", "-t", type=int, default=TIMEOUT, help="Timeout for each test.")
+@click.option("--low", "-l", type=bool, default=False, help="Flag for low global intent cap experiment.")
 
-def main(intents_size, infr_size, variation_rate, epochs, seed, timeout):
-    """ Start an experiment with an infrastructure of SIZE nodes and itentsSize number of intent."""
+def main(intents_size, infr_size, variation_rate, epochs, seed, timeout, low):
+    ''' Start an experiment with an infrastructure of SIZE nodes and itentsSize number of intents.'''
     with TemporaryDirectory() as tmpdir:
         print(f"Temporary directory: {tmpdir}")
         # use tabulate to print the input args
@@ -204,30 +205,34 @@ def main(intents_size, infr_size, variation_rate, epochs, seed, timeout):
                     ["Variation rate", variation_rate], ["Epochs", epochs],
                     ["Timeout", timeout]], tablefmt="fancy_grid"))
 
+        # generating/parsing intents and infrastructure files
         intents = Intents(size=intents_size, readPath=t.SRC_INTENT_DIR, writePath=tmpdir)
         intents_file = join(t.INTENTS_DIR, f"intents{intents_size}.pl")
 
         if exists(intents_file):
             copyfile(intents_file, join(tmpdir, basename(intents_file)))
-        if not exists(intents_file):
+        if not exists(intents_file):    # generate a new intents file
             intents.parse()
             intents.upload()
             copyfile(intents.fileWrite, intents_file)
 
 
-        infr = Infrastructure(size=infr_size, seed=seed, path=tmpdir)
-        infr_file = join(t.INFRS_DIR, f"infr{infr_size}.pl")
+        infr = Infrastructure(size=infr_size, seed=seed, path=tmpdir, low=low)
+        if low:
+            infr_file = join(t.INFRS_DIR, f"low_infr{infr_size}.pl")
+        else:
+            infr_file = join(t.INFRS_DIR, f"infr{infr_size}.pl")
 
         if exists(infr_file): # parse an existing infrastructure
             copyfile(infr_file, join(tmpdir, basename(infr_file)))
             infr.parse()
-        else: # generate a new infrastructure
+        else:       # generate a new infrastructure
             infr.generate()
             infr.upload()
             copyfile(infr.file, infr_file)
 
-        
-        exp = Experiment(infr=infr, intents=intents, epochs=epochs, timeout=timeout, variation_rate=variation_rate)
+        # run experiment
+        exp = Experiment(infr=infr, intents=intents, epochs=epochs, timeout=timeout, variation_rate=variation_rate, low=low)
         exp.run()
         exp.upload()
         

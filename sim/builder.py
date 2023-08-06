@@ -144,15 +144,19 @@ class Link():
 
 
 class Infrastructure(nx.Graph):
-	def __init__(self, size=0, gintentType='footprint', path=t.INFRS_DIR, seed=None):
+	def __init__(self, size=0, gintentType='footprint', path=t.INFRS_DIR, seed=None, low=False):
 		
 		super().__init__()
 		self._size = size
 		self.gintentType = gintentType
 		self.globalIntents = []
 		self.changingProperties = []
+		self.low = low
 		self.id = f"infr{self._size}"
-		self.file = join(path, f"{self.id}.pl")
+		if self.low:
+			self.file = join(path, f"low_{self.id}.pl")
+		else:
+			self.file = join(path, f"{self.id}.pl")
 
 		with open(t.VALUES_FILE, "r") as f:
 			self._values = json.load(f)
@@ -188,8 +192,14 @@ class Infrastructure(nx.Graph):
 			else: 
 				energyCap += t.MAX_ENERGY_PER_EDGE_NODE
 				emissCap += t.MAX_EMISSIONS_PER_EDGE_NODE
-		if self.gintentType=='footprint': cap_value = round(emissCap, 3) 
+
+		if self.gintentType=='footprint': 
+			cap_value = round(emissCap, 3)
 		else: cap_value = round(energyCap, 3)
+
+		if self.low:
+			cap_value = np.around(cap_value / t.LOW_REDUCTION, 3)
+
 		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=cap_value, unit=unit))
 
 	def _generate_cproperty(self):
@@ -376,6 +386,8 @@ class Infrastructure(nx.Graph):
 				bound = gintent["bound"]
 				value = float(gintent["value"])
 				unit = gintent["unit"]
+				if self.low:
+					value = np.around(value / t.LOW_REDUCTION, 3)
 				self.add_gintent(GlobalIntent(type=type, bound=bound, value=value, unit=unit))
 
 	def parse_changing_properties(self, cproperties):
@@ -524,9 +536,10 @@ class Infrastructure(nx.Graph):
 @click.option("--gintent", "-g", type=click.Choice(['footprint', 'energy']), default='footprint', help="Type of cap in the global intent" )
 @click.option("--path", "-p", type=click.Path(exists=True, writable=True), default=t.INFRS_DIR, help="Directory path to save the infrastructure.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for random generator.")
-def main(sizes, gintent, path, seed):
+@click.option("--low", "-l", type=bool, default=False, help="Flag for low global intent cap infrastructure.")
+def main(sizes, gintent, path, seed, low):
 	for size in sizes:
-		infr = Infrastructure(size=size, gintentType=gintent, path=path, seed=seed)
+		infr = Infrastructure(size=size, gintentType=gintent, path=path, seed=seed, low=low)
 		infr.generate()
 		infr.upload()
 		print(f"{infr.id} generated.")
