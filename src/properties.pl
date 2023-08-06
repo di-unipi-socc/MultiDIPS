@@ -11,7 +11,7 @@ chainModifiedByProperty(_, _, From, To, F, Chain, NewChain) :- var(From), nonvar
 chainModifiedByProperty(_, _, From, To, F, Chain, NewChain) :- nonvar(From), nonvar(To), vnf(From, FromAff, _), vnf(To, ToAff, _), addedFromTo(Chain, (From, FromAff), (To, ToAff), F, NewChain).
 
 
-% NON-CHANGING PROPERTIES
+% NON-CHANGING SOFT PROPERTIES
 
 checkProperty(IntentID, latency, From, To, Placement, OldUP, OldUP) :-
     propertyExpectation(IntentID, latency, smaller, _, Value, _, From, To), pathLat(Placement, From, To, Lat), 
@@ -19,6 +19,8 @@ checkProperty(IntentID, latency, From, To, Placement, OldUP, OldUP) :-
 checkProperty(IntentID, latency, From, To, Placement, OldUP, [(latency, desired(Value), actual(Lat))|OldUP]) :-
     propertyExpectation(IntentID, latency, smaller, soft, Value, _, From, To), pathLat(Placement, From, To, Lat), 
     Lat > Value.
+
+% NON-CHANGING HARD PROPERTIES
 
 checkBW(P, AllocBW, OldAllocBW) :-
     placementPath(P, Path),
@@ -30,6 +32,15 @@ checkLinks([(N, M)|T], AllocBW) :-
     link(N, M, _, BW), TotUsedBW =< BW,
     checkLinks(T, AllocBW).
 checkLinks([], _).
+
+checkLat(IntentId, P) :-
+    P = [on(From,_,_), on(To,_,_)|_],
+    propertyExpectation(IntentId, latency, smaller, hard, Value, _, From, To),
+    pathLat(P, From, To, Lat), Lat =< Value.
+checkLat(IntentId, P) :-
+    P = [on(From,_,_), on(To,_,_)|_],
+    \+ propertyExpectation(IntentId, latency, smaller, hard, _, _, From, To).
+checkLat(_, [on(_,_,_)]).
 
 
 % GLOBAL PROPERTIES

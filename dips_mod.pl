@@ -4,7 +4,7 @@ dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
     chainForIntent(IntentId, TargetId, Chain),
     dimensionedChain(Chain, NUsers, DimChain),
     placedChain(DimChain, IntentId, OldPsInfo, AllocBW, P),
-    checkPlacement(IntentId, P, UnsatProp),
+    checkSoftProps(IntentId, P, UnsatProp),
     findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo).
 
 findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo) :-
@@ -61,6 +61,7 @@ hwOK(N, HWReqs, HWCaps, OldPs) :-
     RamReq + AllocRam =< RamCap, CPUReq + AllocCPU =< CPUCap, StorageReq + AllocStorage =< StorageCap.
 
 checkPartialP(IntentId, P, OldPsAllocBW, NewAllocBW, OldPsInfo) :-
+    checkLat(IntentId, P),
     checkBW(P, NewAllocBW, OldPsAllocBW),
     findPInfo(IntentId, P, [], NewAllocBW, PInfo), 
     findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
@@ -106,10 +107,10 @@ calculateFootprintBW(AllocBW, BWEnergy, BWCarbon) :-
     BWCarbon is BWEnergy * GCI.
 
 %% PROPERTIES CHECK %%
-checkPlacement(IntentId, P, UnsatProp) :-
-    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, _, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
-    checkProperties(NonChangProp, IntentId, P, [], UnsatProp).
-checkProperties([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
+checkSoftProps(IntentId, P, UnsatProp) :-
+    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, soft, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
+    checkSoftProps(NonChangProp, IntentId, P, [], UnsatProp).
+checkSoftProps([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
     checkProperty(IntentId, Prop, From, To, P, OldUnsatProp, TmpUnsatProp), 
-    checkProperties(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
-checkProperties([], _, _, UnsatProp, UnsatProp).
+    checkSoftProps(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
+checkSoftProps([], _, _, UnsatProp, UnsatProp).
