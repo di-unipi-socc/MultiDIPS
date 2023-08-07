@@ -14,7 +14,7 @@ from intents import Intents
 from pyswip import Prolog
 from tabulate import tabulate as tbl
 
-TIMEOUT = 10800 #seconds
+TIMEOUT = 43200 #seconds
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents, infr):
@@ -65,7 +65,7 @@ class Result():
         return self.failedP  
     
     def get_unsatprops(self):
-        return self.unsatprops   
+        return self.unsatprops 
     
     def set_results(self, res):
         self.profit     = res["Profit"]
@@ -110,10 +110,11 @@ class Experiment():
         self.epochs = epochs
         self.timeout = timeout
         self.variation_rate = variation_rate
+        self.low = low
         if low:
-            self.file = t.LOW_RESULT_FILE.format(intents=self.intents.id, infr=self.infr.id, rate=self.variation_rate, timestamp=t.TIMESTAMP)
+            self.file = t.LOW_RESULT_FILE.format(intents=self.intents.id, infr=self.infr.id, timestamp=t.TIMESTAMP)
         else:
-            self.file = t.RESULTS_FILE.format(intents=self.intents.id, infr=self.infr.id, rate=self.variation_rate, timestamp=t.TIMESTAMP)
+            self.file = t.RESULTS_FILE.format(intents=self.intents.id, infr=self.infr.id, timestamp=t.TIMESTAMP)
 
         self.processes: dict[str, Process]= {}
         self.results = Manager().list()
@@ -127,6 +128,10 @@ class Experiment():
             results["numIntents"] = self.intents._size
             results["size"] = self.infr._size
             results["rate"] = self.variation_rate
+            if self.low:
+                results["gintent"] = "low"
+            else:
+                results["gintent"] = "normal"
             df_to_file(results, file)
         else:
             print("No results to upload.")
@@ -135,7 +140,7 @@ class Experiment():
         if process.is_alive():
             process.terminate()
             if i:
-                print(f"\tMulti dips failed at epoch {i+1}. (timeout)")
+                print(f"\tFailed at epoch {i+1}. (timeout)")
 
     def run(self):
         for i in range(self.epochs):
@@ -144,7 +149,7 @@ class Experiment():
             p_milp.start()
             self.processes['milp'] = p_milp
             
-            for (mode, weights) in product(t.RANK_MODE, t.HEURISTIC_WEIGHTS):
+            for (mode, weights) in product(t.RANK_MODE.keys(), t.HEURISTIC_WEIGHTS.keys()):
                 p_multiDips = Process(name=f"MultiDips", target=self.multiDips, args=(i, mode, weights,))
                 p_multiDips.start()
                 self.processes[f'({mode},{weights})'] = p_multiDips
@@ -152,28 +157,29 @@ class Experiment():
             for process in self.processes.values():
                 process.join(self.timeout)
                 self.terminate(process, i)
+
             print(f"Changing infrastructure {i}")
             self.infr.run(self.variation_rate)
             self.infr.upload()
   
         
     def multiDips(self, i, mode, weight):
-        print(f"Starting heuristic search - {mode} - {weight}")
+        #print(f"Starting heuristic search - {mode} - {weight}")
 
         multiDips = get_new_prolog_instance(self.intents.fileWrite, self.infr.file)
 
         try:
             query_str = t.MD_QUERY.format(rank_mode=mode, heuristic_weight=weight)
             q_res = query(multiDips, query_str)
-            res = Result(i, type=f"multiDips_{mode}_{weight}")
+            res = Result(i, type=f"{t.RANK_MODE[mode]}_{t.HEURISTIC_WEIGHTS[weight]}")
             res.set_results(q_res)
             self.results.append(res)
-            print(f"Heuristic search finished - {mode} - {weight}")
+            #print(f"Heuristic search finished - {mode} - {weight}")
         except StopIteration:
             print(f"Heuristic search failed - {mode} - {weight}")
 
     def milp(self, i):
-        print("Starting MILP search")
+        #print("Starting MILP search")
         try:
             milp = Milp(self.intents.fileWrite, self.infr.file)
             milp.initialization()
@@ -181,7 +187,7 @@ class Experiment():
             res = Result(i, type=f"MILP")
             res.set_results(milp_res)
             self.results.append(res)
-            print("MILP search finished.")
+            #print("MILP search finished.")
         except StopIteration:
             print("MILP search failed.")
 
@@ -190,7 +196,7 @@ class Experiment():
 @click.command()
 @click.argument("intents_size", type=int, nargs=1)
 @click.argument("infr_size", type=int, nargs=1)
-@click.argument('variation_rate', type=float, default=0.2)
+@click.argument('variation_rate', type=float, default=0.3)
 @click.option('--epochs', '-e', type=int, default=50, help="Number of epochs to run the experiment.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for the random number generator.")
 @click.option("--timeout", "-t", type=int, default=TIMEOUT, help="Timeout for each test.")
