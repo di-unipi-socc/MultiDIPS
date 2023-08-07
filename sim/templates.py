@@ -20,7 +20,7 @@ RESOURCES_TYPES = ["RAM", "CPU", "STORAGE"]
 TYPES   = ['cloud', 'edge']
 PROBS   = [0.25, 0.75]
 MAX_HW_USAGE = 1.35
-VARIATION = {'hw': {'lb': 0.3, 'ub': 1.3}, 'lat': {'lb': 0.6, 'ub': 1.6}, 'bw': {'lb': 0.3, 'ub': 1.3}}
+VARIATION = {'hw': {'lb': 0.4, 'ub': 1.7}, 'lat': {'lb': 0.6, 'ub': 2}, 'bw': {'lb': 0.4, 'ub': 1.7}}
 INFR_CHANGING_PROPERTIES = [('logging', 'logVF'), ('privacy', 'encVF'), ('security', 'authVF'), ('caching', 'cacheVF'), ('compression', 'compVF'), ('encoding', 'encodeVF')]
 INFR_DISC_PREDICATES = {'node': 3, 'totHW': 2, 'pue': 2, 'ramEnergyProfile': 3, 'cpuEnergyProfile': 3, 'storageEnergyProfile': 3, 'energySourceMix': 2, 'energyCost': 2}
 EMISSIONS = {'gas': 0.610, 'coal': 1.1, 'onshorewind': 0.0097, 'offshorewind': 0.0165, 'solar': 0.05}
@@ -41,10 +41,10 @@ PLOTS_DIR = join(SIM_DIR, "plots")
 VALUES_FILE = join(SIM_DIR, "values.json")
 SIM_PL_FILE = join(SIM_DIR, "sim.pl")
 MILP_PL_FILE = join(SIM_DIR, "milp.pl")
-RESULTS_FILE = join(RESULTS_DIR, "{intents}-{infr}-{rate}-{timestamp}.csv")
-LOW_RESULT_FILE = join(RESULTS_DIR, "low-{intents}-{infr}-{rate}-{timestamp}.csv")
+RESULTS_FILE = join(RESULTS_DIR, "{intents}-{infr}-{timestamp}.csv")
+LOW_RESULT_FILE = join(RESULTS_DIR, "low-{intents}-{infr}-{timestamp}.csv")
 TMP_RES_FILE = join(RESULTS_DIR, "{intents}-{infr}-{timestamp}-tmp.csv")
-ALL_RESULTS = RESULTS_FILE.format(intents="*", infr="*", rate="*", timestamp="*")
+ALL_RESULTS = join(RESULTS_DIR, "*.csv")
 
 PLOT_FORMAT = "pdf"
 TXT_FORMAT = "txt"
@@ -86,8 +86,8 @@ VNF = "vnf({id}, {level}, {processTime})."
 VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 
 # --- QUERY TEMPLATES ---
-RANK_MODE = [1, 2, 3, 4]
-HEURISTIC_WEIGHTS = [(100, 0, 0), (0, 100, 0), (0, 0, 100), (33.33, 33.33, 33.33)]
+RANK_MODE = {1: 'FIFO', 2: 'Longest', 3: 'Hungriest', 4: 'Random'}
+HEURISTIC_WEIGHTS = {(100,0,0): 'Profit', (0,100,0): 'Carbon', (0,0,100): 'Free HW', (33.33,33.33,33.33): 'Balanced'}
 MD_QUERY = "testMultiDips({rank_mode}, {heuristic_weight}, Profit, Carbon, Energy, Placement, UnsatProps, Infs, Time)."
 MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_Energy, BW_emissions, Carbon_ij, Energy_ij, Profit_ij)."
 
