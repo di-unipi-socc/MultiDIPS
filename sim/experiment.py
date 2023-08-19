@@ -14,7 +14,7 @@ from intents import Intents
 from pyswip import Prolog
 from tabulate import tabulate as tbl
 
-TIMEOUT = 86400 #seconds
+TIMEOUT = 172800 #seconds
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents, infr):
