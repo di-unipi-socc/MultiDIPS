@@ -12,17 +12,17 @@ from scipy import stats
 import numpy as np
 
 TYPE_TO_HIDE = [
-    "FIFO_Profit",
-    "FIFO_Carbon",
-    "FIFO_Free HW",
-    "FIFO_Balanced",
-    "Random_Profit",
-    "Random_Carbon",
-    "Random_Free HW",
-    "Random_Balanced",
+    'FIFO_Profit',
+    'FIFO_Carbon',
+    'FIFO_Free HW',
+    'FIFO_Balanced',
+    'Random_Profit',
+    'Random_Carbon',
+    'Random_Free HW',
+    'Random_Balanced',
 ]
 
-PALETTE = "colorblind"
+PALETTE = 'colorblind'
 TIME_YLIM = (10**-2, 10**3)
 
 
@@ -33,52 +33,52 @@ def merge_results() -> pd.DataFrame:
 
 
 def groupby(df, field):
-    df = df.groupby("type")[field].agg(["mean", "min", "max"])
-    df.columns = [f"{field}Avg", f"{field}Min", f"{field}Max"]
+    df = df.groupby('type')[field].agg(['mean', 'min', 'max'])
+    df.columns = [f'{field}Avg', f'{field}Min', f'{field}Max']
     return df
 
 
-def intents_infrs_vs(df, field, infr_sizes, num_intents, heuristics=None, ylabel=None, gintent="normal"):
+def intents_infrs_vs(df, field, infr_sizes, num_intents, heuristics=None, ylabel=None, gintent='normal'):
     sns.reset_defaults()
     sns.set(font_scale=1)
-    sns.set(rc={"figure.figsize": (11.7, 8.27)})
+    sns.set(rc={'figure.figsize': (11.7, 8.27)})
 
     for num_intents_value in num_intents:
         for size_value in infr_sizes:
-            filtered_df = df[(df["size"] == size_value) & (df["numIntents"] == num_intents_value)]
+            filtered_df = df[(df['size'] == size_value) & (df['numIntents'] == num_intents_value)]
 
-            if gintent == "low":
-                filtered_df = filtered_df[filtered_df["gintent"] == "low"]
-                name = f"low_{field}_{num_intents_value}-{size_value}"
+            if gintent == 'low':
+                filtered_df = filtered_df[filtered_df['gintent'] == 'low']
+                name = f'low_{field}_{num_intents_value}-{size_value}'
             else:
-                filtered_df = filtered_df[filtered_df["gintent"] == "normal"]
-                name = f"{field}_{num_intents_value}-{size_value}"
+                filtered_df = filtered_df[filtered_df['gintent'] == 'normal']
+                name = f'{field}_{num_intents_value}-{size_value}'
 
             if heuristics != None:
-                filtered_df = filtered_df[filtered_df["type"].isin(heuristics)]
+                filtered_df = filtered_df[filtered_df['type'].isin(heuristics)]
 
             if filtered_df.empty:
-                print(f"No data for {num_intents_value} - {size_value} - {gintent}")
+                print(f'No data for {num_intents_value} - {size_value} - {gintent}')
                 continue
 
-            if field == "profit":
+            if field == 'profit':
                 group_means = (
-                    filtered_df.groupby(["type"])[field].mean().sort_values(ascending=False)
+                    filtered_df.groupby(['type'])[field].mean().sort_values(ascending=False)
                 )
             else:
                 group_means = (
-                    filtered_df.groupby(["type"])[field].mean().sort_values(ascending=True)
+                    filtered_df.groupby(['type'])[field].mean().sort_values(ascending=True)
                 )
 
             plot = sns.violinplot(
-                x = "type", 
+                x = 'type', 
                 y = field, 
                 data = filtered_df, 
                 cut = 0, 
                 order = group_means.index
             )
 
-            plot.set_xticklabels([t.get_text().replace("_", "\n") for t in plot.get_xticklabels()])
+            plot.set_xticklabels([t.get_text().replace('_', '\n') for t in plot.get_xticklabels()])
             plt.ylabel(ylabel if ylabel else field)
 
             plt.xticks(rotation=60)
@@ -86,41 +86,90 @@ def intents_infrs_vs(df, field, infr_sizes, num_intents, heuristics=None, ylabel
             plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI)
             plt.close()
 
-            with open(t.TXT_PATH.format(name=name), "w") as f:
-                group_by_type_field = filtered_df.groupby(["type"])[field].describe()
-                group_by_type_time = filtered_df.groupby(["type"])["time"].describe()
-                f.write(str(group_by_type_field) + "\n\n" + str(group_by_type_time))
+            with open(t.TXT_PATH.format(name=name), 'w') as f:
+                group_by_type_field = filtered_df.groupby(['type'])[field].describe()
+                group_by_type_time = filtered_df.groupby(['type'])['time'].describe()
+                f.write(str(group_by_type_field) + '\n\n' + str(group_by_type_time))
 
-            print("{} done.".format(name))
+            print('{} done.'.format(name))
+
+
+def intents_infrs_vs_v2(df, field, infr_sizes, heuristics=None, ylabel=None, gintent='normal'):
+    sns.reset_defaults()
+    sns.set(font_scale=1.5)
+    sns.set(rc={'figure.figsize': (10, 6)})
+
+    for size_value in infr_sizes:
+        filtered_df = df[(df['size'] == size_value)]
+
+        if gintent == 'low':
+            filtered_df = filtered_df[filtered_df['gintent'] == 'low']
+            name = f'low_{field}-{size_value}'
+        else:
+            filtered_df = filtered_df[filtered_df['gintent'] == 'normal']
+            name = f'{field}-{size_value}'
+
+        if heuristics != None:
+            filtered_df = filtered_df[filtered_df['type'].isin(heuristics)]
+
+        if filtered_df.empty:
+            print(f'No data for {size_value} - {gintent}')
+            continue
+
+        sns.barplot(
+            x = 'numIntents', 
+            y = field, 
+            data = filtered_df, 
+            hue = 'type',
+            hue_order = ['MILP', 'Hungriest_Balanced', 'Hungriest_Profit', 'Hungriest_Carbon', 'Hungriest_Free HW',
+                         'Longest_Balanced', 'Longest_Profit', 'Longest_Carbon', 'Longest_Free HW'],
+            errorbar = None
+        )
+
+        if field == 'time':
+            plt.yscale('log')
+            
+        plt.ylabel(ylabel if ylabel else field)
+        plt.xlabel("Number of intents")
+        plt.legend(loc='best')
+
+        plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI)
+        plt.close()
+
+        with open(t.TXT_PATH.format(name=name), 'w') as f:
+            group_by_type_field = filtered_df.groupby(['type','numIntents'])[field].describe()
+            f.write(str(group_by_type_field))
+
+        print('{} done.'.format(name))
 
 
 def size_vs(df, field, num_intents=None, type=None, ylabel=None):
     # set seaborn context
     sns.reset_defaults()
-    sns.set(style="whitegrid")
-    sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
+    sns.set(style='whitegrid')
+    sns.set_context('notebook', font_scale=1.5, rc={'lines.linewidth': 2.5})
 
     if num_intents != None:
-        df = df[df["numIntents"].isin(num_intents)]
+        df = df[df['numIntents'].isin(num_intents)]
     else:
         num_intents = 'all'
 
-    if type == "all_heuristics":
-        df = df[df["type"] != "MILP"]
+    if type == 'all_heuristics':
+        df = df[df['type'] != 'MILP']
     elif type != None:
-        df = df[df["type"] == type]
+        df = df[df['type'] == type]
     else:
-        type = "all"
+        type = 'all'
 
     if df.empty:
-        print(f"No data for {field} - {num_intents} - {type}")
+        print(f'No data for {field} - {num_intents} - {type}')
         return
 
     # choose plot
     plt.figure(figsize=(10, 6))
 
     sns.lineplot(
-        x = "size",
+        x = 'size',
         y = field,
         data = df,
         hue = 'numIntents',
@@ -130,51 +179,51 @@ def size_vs(df, field, num_intents=None, type=None, ylabel=None):
     )
 
     # set labels
-    plt.xlabel("Infrastructure Size")
+    plt.xlabel('Infrastructure Size')
     plt.ylabel(ylabel if ylabel else field)
-    plt.legend(title="Num. of intents:", loc="best")
+    plt.legend(title='Num. of intents:', loc='best')
 
     # save plot
-    name = "{}-{}".format(type, field.lower())
+    name = '{}-{}'.format(type, field.lower())
     plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI)
     plt.close()
 
-    with open(t.TXT_PATH.format(name=name), "w") as f:
+    with open(t.TXT_PATH.format(name=name), 'w') as f:
         group_by_num_field = df.groupby(['numIntents','size'])[field].describe()
         f.write(str(group_by_num_field))
 
-    print("{} done.".format(name))
+    print('{} done.'.format(name))
 
 
 def gintent_vs(df, field, type=None, num_intents=None, ylabel=None):
     # set seaborn context
     sns.reset_defaults()
-    sns.set(style="whitegrid")
-    sns.set_context("notebook", font_scale=1.5, rc={"lines.linewidth": 2.5})
+    sns.set(style='whitegrid')
+    sns.set_context('notebook', font_scale=1.5, rc={'lines.linewidth': 2.5})
 
     if num_intents != None:
-        df = df[df["numIntents"].isin(num_intents)]
+        df = df[df['numIntents'].isin(num_intents)]
     else:
         num_intents = 'all'
 
-    if type == "all_heuristics":
-        df = df[df["type"] != "MILP"]
+    if type == 'all_heuristics':
+        df = df[df['type'] != 'MILP']
     elif type != None:
-        df = df[df["type"] == type]
+        df = df[df['type'] == type]
     else:
-        type = "all"
+        type = 'all'
 
     if df.empty:
-        print(f"No data for {field} - {num_intents} - {type}")
+        print(f'No data for {field} - {num_intents} - {type}')
         return
 
     # choose plot
     plt.figure(figsize=(10, 6))
 
     sns.lineplot(
-        x = "size",
+        x = 'size',
         y = field,
-        data = df.assign(Intents=df["numIntents"], Carbon=df["gintent"]),
+        data = df.assign(Intents=df['numIntents'], Carbon=df['gintent']),
         style = 'Carbon',
         hue = 'Intents',
         errorbar=None,
@@ -183,40 +232,41 @@ def gintent_vs(df, field, type=None, num_intents=None, ylabel=None):
     )
 
     # set labels
-    plt.xlabel("Infrastructure Size")
+    plt.xlabel('Infrastructure Size')
     plt.ylabel(ylabel if ylabel else field)
-    plt.legend(loc="best")
+    plt.legend(loc='best')
 
     # save plot
-    name = "gintent-{}-{}".format(type, field.lower())
+    name = 'gintent-{}-{}'.format(type, field.lower())
     plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI)
     plt.close()
 
-    with open(t.TXT_PATH.format(name=name), "w") as f:
+    with open(t.TXT_PATH.format(name=name), 'w') as f:
         group_by_num_field = df.groupby(['type','numIntents','gintent'])[field].describe()
         f.write(str(group_by_num_field))
 
-    print("{} done.".format(name))
+    print('{} done.'.format(name))
 
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         df = merge_results()
         # create plots directory, if not exists
         makedirs(t.PLOTS_DIR) if not exists(t.PLOTS_DIR) else None
     except FileNotFoundError as e:
-        raise FileNotFoundError("File not found: {}.".format(basename(e.filename)))
+        raise FileNotFoundError('File not found: {}.'.format(basename(e.filename)))
     except ValueError as e:
-        raise ValueError("No file with pattern: {}".format(t.ALL_RESULTS))
+        raise ValueError('No file with pattern: {}'.format(t.ALL_RESULTS))
 
     # Filtering result type
-    filtered_df = df[~df["type"].isin(TYPE_TO_HIDE)]
+    filtered_df = df[~df['type'].isin(TYPE_TO_HIDE)]
 
     # Get all infrs sizes and number of intents
-    infr_sizes = sorted(filtered_df["size"].unique())
-    num_intents = sorted(filtered_df["numIntents"].unique())
+    infr_sizes = sorted(filtered_df['size'].unique())
+    num_intents = sorted(filtered_df['numIntents'].unique())
 
+    '''
     # Failed placement {numIntents}-{infr_size} with normal and low global intent cap value
     intents_infrs_vs(df=filtered_df, field='failedP', infr_sizes=infr_sizes, num_intents=num_intents, ylabel= 'Failed intent placement', gintent='normal')
     intents_infrs_vs(df=filtered_df, field='failedP', infr_sizes=infr_sizes, num_intents=num_intents, ylabel= 'Failed intent placement', gintent='low')
@@ -227,16 +277,26 @@ if __name__ == "__main__":
 
     # Profit {numIntents}-{infr_size} only with {heuristics}, normal global intent cap value
     heuristics = [
-        "Hungriest_Profit",
-        "Hungriest_Carbon",
-        "Hungriest_FreeHW",
-        "Hungriest_Balanced",
+        'Hungriest_Profit',
+        'Hungriest_Carbon',
+        'Hungriest_FreeHW',
+        'Hungriest_Balanced',
     ]
     # intents_infrs_vs(df=filtered_df, field='profit', infr_sizes=[10], num_intents=[10], heuristics=heuristics, ylabel='Profit', gintent='normal')
 
     # CPU time comparison between different type
-    size_vs(df=filtered_df, field="time", type="all_heuristics", ylabel="Time (s)")
-    size_vs(df=filtered_df, field="time", type="MILP", ylabel="Time (s)")
+    size_vs(df=filtered_df, field='time', type='all_heuristics', ylabel='Time (s)')
+    size_vs(df=filtered_df, field='time', type='MILP', ylabel='Time (s)')
 
     # Low gintent value cap vs normal
-    gintent_vs(df=filtered_df, field="profit", type="MILP", num_intents=None, ylabel="Profit")
+    gintent_vs(df=filtered_df, field='profit', type='MILP', num_intents=None, ylabel='Profit')
+    '''
+
+    intents_infrs_vs_v2(df=filtered_df, field='profit', infr_sizes=infr_sizes, ylabel='Profit (€)', gintent='normal')
+    intents_infrs_vs_v2(df=filtered_df, field='profit', infr_sizes=infr_sizes, ylabel='Profit (€)', gintent='low')
+    
+    intents_infrs_vs_v2(df=filtered_df, field='time', infr_sizes=infr_sizes, ylabel='Time (s)', gintent='normal')
+    intents_infrs_vs_v2(df=filtered_df, field='time', infr_sizes=infr_sizes, ylabel='Time (s)', gintent='low')
+
+    intents_infrs_vs_v2(df=filtered_df, field='carbon', infr_sizes=infr_sizes, ylabel='Carbon footprint (kg)', gintent='normal')
+    intents_infrs_vs_v2(df=filtered_df, field='carbon', infr_sizes=infr_sizes, ylabel='Carbon footprint (kg)', gintent='low')
