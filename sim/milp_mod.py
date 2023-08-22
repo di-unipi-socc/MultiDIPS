@@ -88,6 +88,8 @@ class Milp:
     def solve(self):
         start_time = process_time()
         solver = pywraplp.Solver.CreateSolver('GUROBI')
+
+        # solver.SetSolverSpecificParametersAsString('OptimalityTol=1e-2')
         # solver.SetTimeLimit(10 * 60 * 1000)
 
         # variable: placement variable (if node j is compatible with VNF i)
