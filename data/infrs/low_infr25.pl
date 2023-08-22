@@ -7,7 +7,7 @@
 :- discontiguous energySourceMix/2.
 :- discontiguous energyCost/2.
 
-globalIntent(footprint, smaller, 1.048, kg).
+globalIntent(footprint, smaller, 0.456, kg).
 
 changingProperty(logging, logVF).
 changingProperty(privacy, encVF).
