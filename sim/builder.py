@@ -386,8 +386,6 @@ class Infrastructure(nx.Graph):
 				bound = gintent["bound"]
 				value = float(gintent["value"])
 				unit = gintent["unit"]
-				if self.low:
-					value = np.around(value / t.LOW_REDUCTION, 3)
 				self.add_gintent(GlobalIntent(type=type, bound=bound, value=value, unit=unit))
 
 	def parse_changing_properties(self, cproperties):
