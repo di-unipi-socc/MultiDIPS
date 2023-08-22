@@ -133,7 +133,7 @@ def intents_infrs_vs_v2(df, field, infr_sizes, heuristics=None, ylabel=None, gin
         plt.xlabel("Number of intents")
         plt.legend(loc='best')
 
-        plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI)
+        plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI, bbox_inches='tight')
         plt.close()
 
         with open(t.TXT_PATH.format(name=name), 'w') as f:
