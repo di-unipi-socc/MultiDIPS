@@ -8,31 +8,27 @@ rankIntent(RankMode, IntentList, OrderedIntentList) :-
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
     RankMode = 3, randomIntents(IntentList, OrderedIntentList).
 
-% Longest Chain first. If Chains lengths are equals maximum number of property first.
+% Longest Chain first.
 longestChain([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
-    Intent = intent(_, IntentId, _, TId),
-    target(TId, Chain),
-    length(Chain, NumChainF),
-    findall(CProperty, propertyExpectation(IntentId, CProperty, _,_,_), CPList),
-    length(CPList, NumCProperties),
-    ChainLength is NumChainF + NumCProperties,
-    findall(NCProperty, propertyExpectation(IntentId, NCProperty, _,_,_,_,_,_), NCPList),
-    length(NCPList, NumNCProperty),
-    longestChain(Is, [(ChainLength, NumNCProperty, Intent)|UnorderedIntentList], OrderedIntentList).
+    Intent = intent(_, IntentId, _, TargetId),
+    chainForIntent(IntentId, TargetId, Chain),
+    length(Chain, ChainLength),
+    longestChain(Is, [(ChainLength, Intent)|UnorderedIntentList], OrderedIntentList).
 longestChain([], UnorderedIntentList, OrderedIntentList) :-
     sort(1, @>=,UnorderedIntentList, TmpOrderedIntentList),
-    maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+    maplist(extractElement, TmpOrderedIntentList, OrderedIntentList).
 
 % Intent with higher resources needed first
 hungriestChain([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
+    Intent = intent(_, IntentId, NUsers, TargetId),
     chainForIntent(IntentId, TargetId, Chain),
     dimensionedChain(Chain, NUsers, DimChain),
-    findReqHW(DimChain, NUsers, ChainHW),
+    findReqHW(DimChain, NUsers, (Ram, CPU, Storage)),
     TotHW is Ram + CPU + (Storage/100),
-    hungriestChain(Is, [(TotHW, 0, Intent)|UnorderedIntentList], OrderedIntentList).
+    hungriestChain(Is, [(TotHW, Intent)|UnorderedIntentList], OrderedIntentList).
 hungriestChain([], UnorderedIntentList, OrderedIntentList) :-
     sort(1, @>=, UnorderedIntentList, TmpOrderedIntentList),
-    maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
+    maplist(extractElement, TmpOrderedIntentList, OrderedIntentList).
 
 % Random
 randomIntents(IntentList, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
@@ -69,7 +65,7 @@ sortByAttributes([N|T], Ps, Min, Max, OldSortedNodes, SortedNodes) :-
     sortByAttributes(T, Ps, Min, Max, [(Rank, N)|OldSortedNodes], SortedNodes).
 sortByAttributes([], _, _, _, OldSortedNodes, SortedNodes) :-
     sort(OldSortedNodes, TmpSortedNodes),
-    maplist(extractNode, TmpSortedNodes, SortedNodes).
+    maplist(extractElement, TmpSortedNodes, SortedNodes).
 
 nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
     nodeEmissions(Srcs, TmpNodeEmissions),

@@ -1,4 +1,4 @@
-:-['../multiDips_mod.pl'].
+:-['../multiDips.pl'].
 
 :-set_prolog_flag(stack_limit, 32 000 000 000).
 :-set_prolog_flag(last_call_optimisation, true).

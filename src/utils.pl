@@ -128,6 +128,4 @@ freeHWScore(N, Ps, FreeHWScore) :-
 singleFreeHW(AllocHW, HW, FreeHW) :-
     FreeHW is HW - AllocHW.
 
-extractIntent((_,_, X), X).
-
-extractNode((_,N), N).
+extractElement((_,N), N).
