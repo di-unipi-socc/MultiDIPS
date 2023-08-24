@@ -1,4 +1,4 @@
-:-['dips.pl'].
+:-['dips_mod.pl'].
 
 :- set_prolog_flag(answer_write_options,[max_depth(0), spacing(next_argument)]).
 :- set_prolog_flag(stack_limit, 32 000 000 000).
@@ -7,31 +7,15 @@
 %% HEURISTIC SOLUTION %%
 multiDips(RankMode, Output) :-
     findall(intent(StakeHolder, IntentId, NUsers, TargetId), intent(StakeHolder, IntentId, NUsers, TargetId), IntentList),
-    findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
     rankIntent(RankMode, IntentList, OrderedIntentList),
     StartingPInfo = info(0, 0, 0, [], [], []),
-    callDips(OrderedIntentList, GlobProps, StartingPInfo, Output).
+    callDips(OrderedIntentList, StartingPInfo, Output).
 
-/*
-callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    validPlacement(Intent, GlobProps, OldPsInfo, PInfo), 
+callDips([Intent|Is], OldPsInfo, NewPsInfo) :-
+    (validPlacement(Intent, OldPsInfo, PInfo) -> true; empty(Intent, PInfo)),
     mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
-    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
-callDips([], _, NewPsInfo, NewPsInfo).
+    callDips(Is, TmpPsInfo, NewPsInfo).
+callDips([], NewPsInfo, NewPsInfo).
 
-callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    \+ validPlacement(Intent, GlobProps, OldPsInfo, _),
-    empty(Intent, PInfo), 
-    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
-    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
-*/
-
-callDips([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
-    (validPlacement(Intent, GlobProps, OldPsInfo, PInfo) -> true; empty(Intent, PInfo)),
-    mergePlacements(OldPsInfo, PInfo, TmpPsInfo),
-    callDips(Is, GlobProps, TmpPsInfo, NewPsInfo).
-callDips([], _, NewPsInfo, NewPsInfo).
-
-validPlacement(Intent, GlobProps, OldPsInfo, PInfo):-
-    dips(Intent, OldPsInfo, PInfo),
-    checkGlobalProperties(GlobProps, OldPsInfo, PInfo).
+validPlacement(Intent, OldPsInfo, PInfo):-
+    dips(Intent, OldPsInfo, PInfo).

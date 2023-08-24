@@ -72,10 +72,9 @@ filterAllocBW([(N,N,_)|T], FilteredAllocBW) :-
     filterAllocBW(T, FilteredAllocBW).
 filterAllocBW([],[]).
 
-findReqHW([F|Fs], NUsers, HWReqs) :-
+findReqHW([(F, _, D)|Fs], NUsers, HWReqs) :-
     findReqHW(Fs, NUsers, FsReqs),
-    vnfXUser(F, _, (Min, Max), FReqs),
-    between(Min, Max, NUsers),
+    vnfXUser(F, D, _, FReqs),
     sumReqs(FReqs, FsReqs, HWReqs).
 findReqHW([], _, (0,0,0)).
 
@@ -130,3 +129,5 @@ singleFreeHW(AllocHW, HW, FreeHW) :-
     FreeHW is HW - AllocHW.
 
 extractIntent((_,_, X), X).
+
+extractNode((_,N), N).

@@ -2,19 +2,14 @@
 
 % Rank mode choice
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 1, rankIntent1(IntentList, OrderedIntentList).
+    RankMode = 1, longestChain(IntentList, [], OrderedIntentList).
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 2, rankIntent2(IntentList, [], OrderedIntentList).
+    RankMode = 2, hungriestChain(IntentList, [], OrderedIntentList).
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 3, rankIntent3(IntentList, [], OrderedIntentList).
-rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 4, rankIntent4(IntentList, OrderedIntentList).
+    RankMode = 3, randomIntents(IntentList, OrderedIntentList).
 
-% First in - first served
-rankIntent1(OrderedIntentList, OrderedIntentList).
-
-% Longer Chain first. If Chains lengths are equals maximum number of property first.
-rankIntent2([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
+% Longest Chain first. If Chains lengths are equals maximum number of property first.
+longestChain([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
     Intent = intent(_, IntentId, _, TId),
     target(TId, Chain),
     length(Chain, NumChainF),
@@ -23,34 +18,39 @@ rankIntent2([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
     ChainLength is NumChainF + NumCProperties,
     findall(NCProperty, propertyExpectation(IntentId, NCProperty, _,_,_,_,_,_), NCPList),
     length(NCPList, NumNCProperty),
-    rankIntent2(Is, [(ChainLength, NumNCProperty, Intent)|UnorderedIntentList], OrderedIntentList).
-rankIntent2([], UnorderedIntentList, OrderedIntentList) :-
+    longestChain(Is, [(ChainLength, NumNCProperty, Intent)|UnorderedIntentList], OrderedIntentList).
+longestChain([], UnorderedIntentList, OrderedIntentList) :-
     sort(1, @>=,UnorderedIntentList, TmpOrderedIntentList),
     maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
 
-% Intent with (estimated) higher resources needed first
-rankIntent3([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
-    Intent = intent(_, IntentId, NUsers, TId),
-    target(TId, Chain),
-    findReqHW(Chain, NUsers, ChainHW),
-    findall(F, propertiesVNF(IntentId, F), CPropertiesVNF),
-    findReqHW(CPropertiesVNF, NUsers, CPropertiesHW),
-    sumReqs(ChainHW, CPropertiesHW, (Ram, CPU, Storage)),
+% Intent with higher resources needed first
+hungriestChain([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
+    chainForIntent(IntentId, TargetId, Chain),
+    dimensionedChain(Chain, NUsers, DimChain),
+    findReqHW(DimChain, NUsers, ChainHW),
     TotHW is Ram + CPU + (Storage/100),
-    rankIntent3(Is, [(TotHW, 0, Intent)|UnorderedIntentList], OrderedIntentList).
-rankIntent3([], UnorderedIntentList, OrderedIntentList) :-
+    hungriestChain(Is, [(TotHW, 0, Intent)|UnorderedIntentList], OrderedIntentList).
+hungriestChain([], UnorderedIntentList, OrderedIntentList) :-
     sort(1, @>=, UnorderedIntentList, TmpOrderedIntentList),
     maplist(extractIntent, TmpOrderedIntentList, OrderedIntentList).
 
-propertiesVNF(IntentId, F) :- propertyExpectation(IntentId, Property, _, _, _), changingProperty(Property, F).
-
 % Random
-rankIntent4(IntentList, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
+randomIntents(IntentList, OrderedIntentList) :- random_permutation(IntentList, OrderedIntentList).
 
 
 %% NODE RANKING %%
 
-% Weighted ranking
+% Default rank mode
+nodesRankMode(1).
+
+rankNodes(Nodes, Ps, SortedNodes) :-
+    nodesRankMode(NodesRankMode),
+    \+ NodesRankMode = 5, sortByAttributes(Nodes, Ps, SortedNodes).
+rankNodes(Nodes, _, SortedNodes) :-
+    nodesRankMode(NodesRankMode),
+    NodesRankMode = 5, random_permutation(Nodes, SortedNodes).
+
+% Default weight
 weight(unitCost, 100).
 weight(emission, 0).
 weight(freeHW, 0).
@@ -67,7 +67,9 @@ sortByAttributes([N|T], Ps, Min, Max, OldSortedNodes, SortedNodes) :-
     freeHWScore(N, Ps, FreeHWScore),
     rank((UnitCost, NodeEmissions, FreeHWScore), Min, Max, Rank),
     sortByAttributes(T, Ps, Min, Max, [(Rank, N)|OldSortedNodes], SortedNodes).
-sortByAttributes([], _, _, _, OldSortedNodes, SortedNodes) :- sort(OldSortedNodes, SortedNodes).
+sortByAttributes([], _, _, _, OldSortedNodes, SortedNodes) :-
+    sort(OldSortedNodes, TmpSortedNodes),
+    maplist(extractNode, TmpSortedNodes, SortedNodes).
 
 nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
     nodeEmissions(Srcs, TmpNodeEmissions),

@@ -1,11 +1,10 @@
 :-['src/properties.pl','src/rank.pl','src/utils.pl']. 
 
 dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
-    OldPsInfo = info(_, _, _, OldPs, OldAllocBW, _),
     chainForIntent(IntentId, TargetId, Chain),
     dimensionedChain(Chain, NUsers, DimChain),
-    placedChain(DimChain, IntentId, OldPs, AllocBW, P),
-    checkPlacement(IntentId, P, AllocBW, OldAllocBW, UnsatProp),
+    placedChain(DimChain, IntentId, OldPsInfo, AllocBW, P),
+    checkSoftProps(IntentId, P, UnsatProp),
     findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo).
 
 findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo) :-
@@ -41,15 +40,18 @@ dimensionedChain([(F,A)|Zs], U, OldC, NewC) :-
 dimensionedChain([], _, Chain, Chain).
 
 
-placedChain(DimChain, IntentId, OldPs, AllocBW, P) :-
-    findall(N, node(N,_,_), Nodes), sortByAttributes(Nodes, OldPs, SortedNodes),
-    placedChain(DimChain, IntentId, OldPs, SortedNodes, [], [], AllAllocBW, P),
-    filterAllocBW(AllAllocBW, AllocBW).
-placedChain([(F, L, D)|VNFs], IntentId, OldPs, SortedNodes, OldAllocBW, OldP, AllocBW, NewP) :-
-    vnfXUser(F, D, _, HWReqs), member((_,N), SortedNodes), node(N, L, HWCaps),
-    hwOK(N, HWReqs, HWCaps, [(IntentId, OldP)|OldPs]),
-    nodeToNodeBW(IntentId, N, OldP, OldAllocBW, TmpAllocBW),
-    placedChain(VNFs, IntentId, OldPs, SortedNodes, TmpAllocBW, [on(F, D, N)|OldP], AllocBW, NewP).
+placedChain(DimChain, IntentId, OldPsInfo, AllocBW, P) :-
+    OldPsInfo = info(_, _, _, OldPs, _, _),
+    findall(N, node(N,_,_), Nodes), rankNodes(Nodes, OldPs, SortedNodes), 
+    placedChain(DimChain, SortedNodes, IntentId, OldPsInfo, [], [], AllocBW, P).
+placedChain([(F, L, D)|VNFs], SortedNodes, IntentId, OldPsInfo, TmpAllocBW, TmpP, AllocBW, NewP) :-
+    OldPsInfo = info(_, _, _, OldPs, OldPsAllocBW, _),
+    vnfXUser(F, D, _, HWReqs), member(N, SortedNodes), node(N, L, HWCaps),
+    hwOK(N, HWReqs, HWCaps, [(IntentId, TmpP)|OldPs]),
+    P = [on(F, D, N)|TmpP],
+    nodeToNodeBW(IntentId, N, TmpP, TmpAllocBW, NewAllocBW),
+    checkPartialP(IntentId, P, OldPsAllocBW, NewAllocBW, OldPsInfo),
+    placedChain(VNFs, SortedNodes, IntentId, OldPsInfo, NewAllocBW, P, AllocBW, NewP).
 placedChain([], _, _, _, AllocBW, NewP, AllocBW, NewP).
 
 hwOK(N, HWReqs, HWCaps, OldPs) :-
@@ -57,6 +59,13 @@ hwOK(N, HWReqs, HWCaps, OldPs) :-
     HWCaps = (RamCap, CPUCap, StorageCap),
     allocatedHW(OldPs, N, (AllocRam, AllocCPU, AllocStorage)),
     RamReq + AllocRam =< RamCap, CPUReq + AllocCPU =< CPUCap, StorageReq + AllocStorage =< StorageCap.
+
+checkPartialP(IntentId, P, OldPsAllocBW, NewAllocBW, OldPsInfo) :-
+    checkLat(IntentId, P),
+    checkBW(P, NewAllocBW, OldPsAllocBW),
+    findPInfo(IntentId, P, [], NewAllocBW, PInfo), 
+    findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
+    checkGlobalProperties(GlobProps, OldPsInfo, PInfo).
 
 
 calculateHWInfo([on(F, D, N)|T], TotHWEnergy, TotHWCarbon, TotProfit):-
@@ -91,17 +100,17 @@ calculateProfit(on(F, D, N), HWEnergy, Profit) :-
 calculateProfit([], _, 0).
 
 calculateFootprintBW(AllocBW, BWEnergy, BWCarbon) :-
-    sumBW(AllocBW, BWValue),
+    filterAllocBW(AllocBW, RealAllocBW),
+    sumBW(RealAllocBW, BWValue),
     kWhPerMB(V), averageGCI(GCI),
     BWEnergy is BWValue * V,
     BWCarbon is BWEnergy * GCI.
 
 %% PROPERTIES CHECK %%
-checkPlacement(IntentId, P, AllocBW, OldAllocBW, UnsatProp) :-
-    checkBW(P, AllocBW, OldAllocBW),
-    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, _, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
-    checkProperties(NonChangProp, IntentId, P, [], UnsatProp).
-checkProperties([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
+checkSoftProps(IntentId, P, UnsatProp) :-
+    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, soft, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
+    checkSoftProps(NonChangProp, IntentId, P, [], UnsatProp).
+checkSoftProps([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
     checkProperty(IntentId, Prop, From, To, P, OldUnsatProp, TmpUnsatProp), 
-    checkProperties(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
-checkProperties([], _, _, UnsatProp, UnsatProp).
+    checkSoftProps(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
+checkSoftProps([], _, _, UnsatProp, UnsatProp).
