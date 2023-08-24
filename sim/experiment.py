@@ -150,7 +150,7 @@ class Experiment():
             self.processes['milp'] = p_milp
             
             
-            for (intents_rank_mode, nodes_rank_mode) in product(t.INTENTS_RANK_MODE.keys(), t.NODES_RANK_MODE.keys()):
+            for (intents_rank_mode, nodes_rank_mode) in product(t.INTENTS_RANK_MODE, t.NODES_RANK_MODE):
                 p_multiDips = Process(name=f"MultiDips", target=self.multiDips, args=(i, intents_rank_mode, nodes_rank_mode,))
                 p_multiDips.start()
                 self.processes[f'({intents_rank_mode},{nodes_rank_mode})'] = p_multiDips
@@ -174,7 +174,7 @@ class Experiment():
         try:
             query_str = t.MD_QUERY.format(intents_rank_mode=intents_rank_mode, nodes_rank_mode=nodes_rank_mode, heuristic_weights=weights)
             q_res = query(multiDips, query_str)
-            res = Result(i+1, type=f"{t.INTENTS_RANK_MODE[intents_rank_mode]}_{t.NODES_RANK_MODE[nodes_rank_mode]}")
+            res = Result(i+1, type=f"{intents_rank_mode}_{nodes_rank_mode}")
             res.set_results(q_res)
             self.results.append(res)
             #print(f"Heuristic search finished - {mode} - {weight}")
@@ -206,7 +206,7 @@ class Experiment():
 @click.option("--low", "-l", type=bool, default=False, help="Flag for low global intent cap experiment.")
 
 def main(intents_size, infr_size, variation_rate, epochs, seed, timeout, low):
-    ''' Start an experiment with an infrastructure of SIZE nodes and itentsSize number of intents.'''
+    # Start an experiment with an infrastructure of infr_size nodes and intents_size number of intents.
     with TemporaryDirectory() as tmpdir:
         print(f"Temporary directory: {tmpdir}")
         # use tabulate to print the input args

@@ -81,7 +81,7 @@ ENERGY_COSTS = {
     "North Macedonia": 0.099,
     "Kosovo": 0.072,
     "Bosnia": 0.166,
-    "Slovakia": 0.215
+    "Slovakia": 0.215,
 }
 
 # --- INTENT CONSTANT ---
@@ -157,20 +157,14 @@ VNF = "vnf({id}, {level}, {processTime})."
 VNFXUSERS = "vnfXUser({id}, {version}, {usersRange}, {HWReqs})."
 
 # --- QUERY TEMPLATES ---
-INTENTS_RANK_MODE = {1: "Longest", 2: "Hungriest", 3: "Random"}
-NODES_RANK_MODE = {
-    1: "Profit",
-    2: "Carbon",
-    3: "Free HW",
-    4: "Balanced",
-    5: "Random"
-}
+INTENTS_RANK_MODE = ["longest", "hungriest", "random"]
+NODES_RANK_MODE = ["profit", "carbon", "freeHW", "balanced", "random"]
 NODES_RANK_WEIGHT = {
-    1: (100, 0, 0),
-    2: (0, 100, 0),
-    3: (0, 0, 100),
-    4: (33.33, 33.33, 33.33),
-    5: (0, 0, 0)
+    "profit": (100, 0, 0),
+    "carbon": (0, 100, 0),
+    "freeHW": (0, 0, 100),
+    "balanced": (33.33, 33.33, 33.33),
+    "random": (0, 0, 0),
 }
 MD_QUERY = "testMultiDips({intents_rank_mode}, {nodes_rank_mode}, {heuristic_weights}, Profit, Carbon, Energy, Placement, UnsatProps, Infs, Time)."
 MILP_QUERY = "milp(Nodes, Res_j, Layer_j, Vnfs, OnlyVnfs, Dim_i, ReqHW_i, Layer_i, Lat_i, BWReq, MaxLat, LinkBW_jk, LinkLat_jk, MaxEmissions, BW_Energy, BW_emissions, Carbon_ij, Energy_ij, Profit_ij)."

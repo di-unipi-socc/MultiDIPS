@@ -2,11 +2,11 @@
 
 % Rank mode choice
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 1, longestChain(IntentList, [], OrderedIntentList).
+    RankMode = 'longest', longestChain(IntentList, [], OrderedIntentList).
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 2, hungriestChain(IntentList, [], OrderedIntentList).
+    RankMode = 'hungriest', hungriestChain(IntentList, [], OrderedIntentList).
 rankIntent(RankMode, IntentList, OrderedIntentList) :-
-    RankMode = 3, randomIntents(IntentList, OrderedIntentList).
+    RankMode = 'random', randomIntents(IntentList, OrderedIntentList).
 
 % Longest Chain first.
 longestChain([Intent|Is], UnorderedIntentList, OrderedIntentList) :-
@@ -37,14 +37,14 @@ randomIntents(IntentList, OrderedIntentList) :- random_permutation(IntentList, O
 %% NODE RANKING %%
 
 % Default rank mode
-nodesRankMode(1).
+nodesRankMode('profit').
 
-rankNodes(Nodes, Ps, SortedNodes) :-
-    nodesRankMode(NodesRankMode),
-    \+ NodesRankMode = 5, sortByAttributes(Nodes, Ps, SortedNodes).
 rankNodes(Nodes, _, SortedNodes) :-
     nodesRankMode(NodesRankMode),
-    NodesRankMode = 5, random_permutation(Nodes, SortedNodes).
+    NodesRankMode = 'random', random_permutation(Nodes, SortedNodes).
+rankNodes(Nodes, Ps, SortedNodes) :-
+    nodesRankMode(NodesRankMode),
+    \+ NodesRankMode = 'random', sortByAttributes(Nodes, Ps, SortedNodes).
 
 % Default weight
 weight(unitCost, 100).

@@ -16,12 +16,12 @@ testMultiDips(IntentsRankMode, NodesRankMode, Weight, Profit, Carbon, Energy, Pl
 
 
 setNodeRankMode(NodesRankMode, _) :-
-    NodesRankMode = 5,      % Random
+    NodesRankMode = 'random',      
     abolish(nodesRankMode/1), 
     assertz(nodesRankMode(NodesRankMode)).
 
 setNodeRankMode(NodesRankMode, Weight) :-
-    \+ NodesRankMode = 5,        % Not random
+    \+ NodesRankMode = 'random',        
     Weight = (WeightUnitCost, WeightEmissions, WeightFreeHW),
     abolish(nodesRankMode/1), 
     abolish(weight/2),
