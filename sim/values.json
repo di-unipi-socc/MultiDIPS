@@ -1,38 +1,36 @@
 {
     "cloud": {
-        "totRamHW": {"lb": 128, "ub": 416},
+        "totRamHW": {"lb": 128, "ub": 256},
         "totCPUHW": {"lb": 24, "ub": 48},
         "totStorageHW": {"lb": 5000, "ub": 12000},
         "pue": {"lb": 1.15, "ub": 1.60},
         "ramUnitkWh": {"lb": 0.00030, "ub": 0.00040},
         "CPUUnitkWh": {"lb": 0.009, "ub": 0.012},   
-        "storageUnitkWh": {"lb": 0.0005, "ub": 0.0008},     
-        "energyCost" : {"lb": 0.098, "ub": 0.500}              
+        "storageUnitkWh": {"lb": 0.0005, "ub": 0.0008}            
     },
     
     "edge": {
-        "totRamHW": {"lb": 16, "ub": 42},
-        "totCPUHW": {"lb": 8, "ub": 14},
+        "totRamHW": {"lb": 16, "ub": 32},
+        "totCPUHW": {"lb": 8, "ub": 16},
         "totStorageHW": {"lb": 500, "ub": 2000},
         "pue": {"lb": 1.05, "ub": 1.20},
         "ramUnitkWh": {"lb": 0.00045, "ub": 0.00055},
         "CPUUnitkWh": {"lb": 0.012, "ub": 0.015},   
-        "storageUnitkWh": {"lb": 0.0006, "ub": 0.001},
-        "energyCost" : {"lb": 0.098, "ub": 0.500}              
+        "storageUnitkWh": {"lb": 0.0006, "ub": 0.001}              
     },
     
     "link": {
         "e2e": {
             "bw": {"lb": 100, "ub": 200},
-            "lat": {"lb": 15, "ub": 50}
+            "lat": {"lb": 10, "ub": 50}
         },
         "e2c": {
             "bw": {"lb": 200, "ub": 300},
-            "lat": {"lb": 25, "ub": 80}
+            "lat": {"lb": 50, "ub": 150}
         },
         "c2c": {
-            "bw": {"lb": 350, "ub": 1000},
-            "lat": {"lb": 5, "ub": 20}
+            "bw": {"lb": 300, "ub": 1000},
+            "lat": {"lb": 5, "ub": 25}
         }
     }
 }
