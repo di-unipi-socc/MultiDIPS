@@ -7,8 +7,8 @@ from tempfile import TemporaryDirectory
 
 import click
 import pandas as pd
-import templates as t
-from milp_mod import Milp
+import data as t
+from milp import Milp
 from builder import Infrastructure
 from intents import Intents 
 from pyswip import Prolog
@@ -129,9 +129,9 @@ class Experiment():
             results["size"] = self.infr._size
             results["rate"] = self.variation_rate
             if self.low:
-                results["gintent"] = "low"
+                results["limit"] = "low"
             else:
-                results["gintent"] = "normal"
+                results["limit"] = "normal"
             df_to_file(results, file)
         else:
             print("No results to upload.")
@@ -149,10 +149,11 @@ class Experiment():
             p_milp.start()
             self.processes['milp'] = p_milp
             
-            for (mode, weights) in product(t.RANK_MODE.keys(), t.HEURISTIC_WEIGHTS.keys()):
-                p_multiDips = Process(name=f"MultiDips", target=self.multiDips, args=(i, mode, weights,))
+            
+            for (intents_rank_mode, nodes_rank_mode) in product(t.INTENTS_RANK_MODE.keys(), t.NODES_RANK_MODE.keys()):
+                p_multiDips = Process(name=f"MultiDips", target=self.multiDips, args=(i, intents_rank_mode, nodes_rank_mode,))
                 p_multiDips.start()
-                self.processes[f'({mode},{weights})'] = p_multiDips
+                self.processes[f'({intents_rank_mode},{nodes_rank_mode})'] = p_multiDips
 
             for process in self.processes.values():
                 process.join(self.timeout)
@@ -163,20 +164,22 @@ class Experiment():
             self.infr.upload()
   
         
-    def multiDips(self, i, mode, weight):
+    def multiDips(self, i, intents_rank_mode, nodes_rank_mode):
         #print(f"Starting heuristic search - {mode} - {weight}")
+
+        weights = t.NODES_RANK_WEIGHT[nodes_rank_mode]
 
         multiDips = get_new_prolog_instance(self.intents.fileWrite, self.infr.file)
 
         try:
-            query_str = t.MD_QUERY.format(rank_mode=mode, heuristic_weight=weight)
+            query_str = t.MD_QUERY.format(intents_rank_mode=intents_rank_mode, nodes_rank_mode=nodes_rank_mode, heuristic_weights=weights)
             q_res = query(multiDips, query_str)
-            res = Result(i, type=f"{t.RANK_MODE[mode]}_{t.HEURISTIC_WEIGHTS[weight]}")
+            res = Result(i+1, type=f"{t.INTENTS_RANK_MODE[intents_rank_mode]}_{t.NODES_RANK_MODE[nodes_rank_mode]}")
             res.set_results(q_res)
             self.results.append(res)
             #print(f"Heuristic search finished - {mode} - {weight}")
         except StopIteration:
-            print(f"Heuristic search failed - {mode} - {weight}")
+            print(f"Heuristic search failed - {intents_rank_mode} - {nodes_rank_mode}")
 
     def milp(self, i):
         #print("Starting MILP search")
@@ -184,7 +187,7 @@ class Experiment():
             milp = Milp(self.intents.fileWrite, self.infr.file)
             milp.initialization()
             milp_res = milp.solve()
-            res = Result(i, type=f"MILP")
+            res = Result(i+1, type=f"MILP")
             res.set_results(milp_res)
             self.results.append(res)
             #print("MILP search finished.")
@@ -223,7 +226,7 @@ def main(intents_size, infr_size, variation_rate, epochs, seed, timeout, low):
             copyfile(intents.fileWrite, intents_file)
 
 
-        infr = Infrastructure(size=infr_size, seed=seed, path=tmpdir, low=low)
+        infr = Infrastructure(size=infr_size, seed=seed, path=tmpdir, low_limit=low)
         if low:
             infr_file = join(t.INFRS_DIR, f"low_infr{infr_size}.pl")
         else:

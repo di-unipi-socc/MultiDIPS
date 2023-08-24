@@ -7,11 +7,9 @@ import click
 import networkx as nx
 import numpy as np
 import parse as p
-import templates as t
+import data as t
 from numpy import random as rnd
-from math import exp
-
-from time import sleep
+import random
 
 
 def get_random_sample(l, size=1):
@@ -144,16 +142,16 @@ class Link():
 
 
 class Infrastructure(nx.Graph):
-	def __init__(self, size=0, gintentType='footprint', path=t.INFRS_DIR, seed=None, low=False):
+	def __init__(self, size=0, gintentType='footprint', path=t.INFRS_DIR, seed=None, low_limit=False):
 		
 		super().__init__()
 		self._size = size
 		self.gintentType = gintentType
 		self.globalIntents = []
 		self.changingProperties = []
-		self.low = low
+		self.low_limit = low_limit
 		self.id = f"infr{self._size}"
-		if self.low:
+		if self.low_limit:
 			self.file = join(path, f"low_{self.id}.pl")
 		else:
 			self.file = join(path, f"{self.id}.pl")
@@ -183,25 +181,26 @@ class Infrastructure(nx.Graph):
 
 	def _generate_global_intent(self):
 		unit = "kg" if self.gintentType=='footprint' else "kWh"
-		energyCap = 0
-		emissCap = 0
-		for _, n in self.nodes(data="obj"):
-			if n.type == 'cloud': 
-				energyCap += t.MAX_ENERGY_PER_CLOUD_NODE 
-				emissCap += t.MAX_EMISSIONS_PER_CLOUD_NODE
-			else: 
-				energyCap += t.MAX_ENERGY_PER_EDGE_NODE
-				emissCap += t.MAX_EMISSIONS_PER_EDGE_NODE
+
+		max_energy = self.find_max_energy()
+		max_emission = max_energy * max(t.EMISSIONS.values())
 
 		if self.gintentType=='footprint': 
-			cap_value = round(emissCap, 3)
-		else: cap_value = round(energyCap, 3)
+			cap_value = round(max_emission, 3)
+		else:
+			cap_value = round(max_energy, 3)
 
-		if self.low:
-			cap_value = np.around(cap_value / t.LOW_REDUCTION, 3)
+		if self.low_limit:
+			cap_value = np.around(cap_value / t.LOW_LIMIT_REDUCTION, 3)
 
 		self.add_gintent(GlobalIntent(type=self.gintentType, bound="smaller", value=cap_value, unit=unit))
 
+	def find_max_energy(self):
+		tot_kWh = 0
+		for _, n in self.nodes(data="obj"):
+			tot_kWh += n.ramkWh + n.CPUkWh + n.storagekWh
+		return tot_kWh
+	
 	def _generate_cproperty(self):
 		for prop,vnf in t.INFR_CHANGING_PROPERTIES:
 			self.add_chaingingProperties(CProperty(property=prop, vnf=vnf))
@@ -239,27 +238,11 @@ class Infrastructure(nx.Graph):
 			pue 	= np.around(rnd.uniform(self._values[type]["pue"]["lb"], self._values[type]["pue"]["ub"]), 2)
 			mix 	= generate_energy_mix()
 
-			energyCost = self.calculate_energy_cost(type, mix)
+			energyCost = random.choice(list(t.ENERGY_COSTS.values()))
 
 			self.add_node(Node(nid=nid, type=type, HWcaps=(ramHWCap, CPUHWCap, storageHWCap), totHW=(totRamHW, totCPUHW, totStorageHW), ramkWh=ramkWh,
 		      					CPUkWh=CPUkWh, storagekWh=storagekWh, pue=pue, energy_mix=mix, energyCost=energyCost))
-
-	def calculate_energy_cost(self, type, mix):
-		min_energy_cost = self._values[type]['energyCost']['lb']
-		max_energy_cost = self._values[type]['energyCost']['ub']
 				
-		total_emissions = 0
-		for (prob, source) in mix:
-			total_emissions += prob * t.EMISSIONS[source]
-				
-		max_emission = max(t.EMISSIONS.values())
-		min_emission = min(t.EMISSIONS.values())
-		emissions_score = (total_emissions - min_emission) / (max_emission - min_emission)		# (0-1) lower is better
-		energyCost = (max_energy_cost * (1 - emissions_score) + min_energy_cost * emissions_score) * (0.6 ** emissions_score)
-		energyCost = np.around(max(energyCost, min_energy_cost), 3)
-		return energyCost
-				
-		
 	def _generate_links(self):		
 		for s, d in product(self.nodes, repeat=2):
 			if(s != d and (s,d) not in self.edges and (d,s) not in self.edges):
@@ -295,7 +278,6 @@ class Infrastructure(nx.Graph):
 						lat_sd = t.LAT_MAX_VALUE
 						self.edges[d,s]["obj"].bw = int(t.BW_MIN_VALUE)
 					self.edges[d,s]["obj"].lat = int(lat_sd)
-
 
 	def linkType(self,s,d):
 		s = self.nodes[s]['obj']
@@ -537,7 +519,7 @@ class Infrastructure(nx.Graph):
 @click.option("--low", "-l", type=bool, default=False, help="Flag for low global intent cap infrastructure.")
 def main(sizes, gintent, path, seed, low):
 	for size in sizes:
-		infr = Infrastructure(size=size, gintentType=gintent, path=path, seed=seed, low=low)
+		infr = Infrastructure(size=size, gintentType=gintent, path=path, seed=seed, low_limit=low)
 		infr.generate()
 		infr.upload()
 		print(f"{infr.id} generated.")

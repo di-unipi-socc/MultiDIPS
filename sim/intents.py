@@ -1,4 +1,4 @@
-import templates as t
+import data as t
 from os.path import join, dirname, exists
 from os import makedirs
 import parse as p

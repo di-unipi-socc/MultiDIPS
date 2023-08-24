@@ -5,8 +5,7 @@ from time import process_time
 from pyswip import Prolog
 from ortools.linear_solver import pywraplp
 from ast import literal_eval
-import templates as t
-
+import data as t
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents_file, infr_file):
@@ -86,15 +85,19 @@ class Milp:
         else: return 0
 
     def solve(self):
-        start_time = process_time()
         solver = pywraplp.Solver.CreateSolver('GUROBI')
 
-        # variable: placement variable
-        x = {
-            (i, j): solver.BoolVar(f"{v}_on_{n}")
-            for i, v in enumerate(self.only_vnfs)
-            for j, n in enumerate(self.nodes)
-        }
+        solver.SetTimeLimit(24 * 60 * 60 * 1000)    # 24 hours timeout
+
+        start_time = process_time()
+  
+        # variable: placement variable (if node j is compatible with VNF i)
+        x = {}
+        for i, v in enumerate(self.only_vnfs):
+            for j, n in enumerate(self.nodes):
+                if(self.req_layer[i] == self.nodes_layer[j]):
+                    x[i,j] = solver.BoolVar(f"{v}_on_{n}")
+                  
 
         # variable: chain placed
         p = {
@@ -105,7 +108,7 @@ class Milp:
         # constraint: Vnf deployed to at most one node
         [
             solver.Add(
-                solver.Sum([x[i, j] for j in range(len(self.nodes))]) <= 1,
+                solver.Sum([x[i, j] for j in range(len(self.nodes)) if (i,j) in x.keys()]) <= 1,
                 name=f"max_one_node_{v}"
             )
             for i, v in enumerate(self.only_vnfs)
@@ -120,7 +123,7 @@ class Milp:
                     [
                         x[i, j]
                         for i in range(i_base, i_base + len(chain))
-                        for j in range(len(self.nodes))
+                        for j in range(len(self.nodes)) if (i,j) in x.keys()
                     ]
                 ) == p[c] * len(chain),
                 name=f"chain_{c}_placed"
@@ -135,21 +138,11 @@ class Milp:
                     solver.Sum(
                         [
                             x[i, j] * self.req_HW[i][resType]
-                            for i in range(len(self.only_vnfs))
+                            for i in range(len(self.only_vnfs)) if (i,j) in x.keys()
                         ]
                     ) <= self.res[j][resType],
                     name=f"max_res_node_{n}"
                 )
-
-        # constraint: vnf and node layer
-        [
-            solver.Add(
-                x[i, j] * self.req_layer[i] == x[i, j] * self.nodes_layer[j],
-                name=f"layer_{v}_{n}"
-            )
-            for i, v in enumerate(self.only_vnfs)
-            for j, n in enumerate(self.nodes)
-        ]
 
         y_dictionary = {}
         for (j, n1), (k,n2) in itertools.product(enumerate(self.nodes), repeat = 2):
@@ -198,7 +191,7 @@ class Milp:
                 [
                     x[i, j] * self.carbon[i][j]
                     for i in range(len(self.only_vnfs))
-                    for j in range(len(self.nodes))
+                    for j in range(len(self.nodes)) if (i,j) in x.keys()
                 ]
             )
             + solver.Sum(
@@ -218,59 +211,63 @@ class Milp:
                 [
                     x[i, j] * self.profit[i][j]
                     for i in range(len(self.only_vnfs))
-                    for j in range(len(self.nodes))
+                    for j in range(len(self.nodes)) if (i,j) in x.keys()
                 ]
             )
         )
 
-        # print(solver.NumConstraints())
-
+        
         # solving
         status = solver.Solve()
+
         solving_time = process_time() - start_time
 
         solution = {}
-        # parse solution
-        if status == pywraplp.Solver.OPTIMAL:
 
-            sol_placement = self.parse_placement(x)    
-            sol_carbon = sum(
-                [
-                    x[i, j].solution_value() * self.carbon[i][j]
-                    for i in range(len(self.only_vnfs))
-                    for j in range(len(self.nodes))
-                ]
-            ) + sum(
-                [
-                    y_dictionary[j, k][i, h].solution_value() * (self.bw_req[i][h] * self.link_emissions(j,k))
-                    for j, k in y_dictionary.keys()
-                    for i, h in y_dictionary[j, k].keys()
-                ]
-            )
+        # parse solution
+        #if status == pywraplp.Solver.OPTIMAL:
+        
+        sol_placement = self.parse_placement(x)    
+        sol_carbon = sum(
+            [
+                x[i, j].solution_value() * self.carbon[i][j]
+                for i in range(len(self.only_vnfs))
+                for j in range(len(self.nodes)) if (i,j) in x.keys()
+            ]
+        ) + sum(
+            [
+                y_dictionary[j, k][i, h].solution_value() * (self.bw_req[i][h] * self.link_emissions(j,k))
+                for j, k in y_dictionary.keys()
+                for i, h in y_dictionary[j, k].keys()
+            ]
+        )
+        sol_energy = sum(
+            [
+                x[i, j].solution_value() * self.energy[i][j]
+                for i in range(len(self.only_vnfs))
+                for j in range(len(self.nodes)) if (i,j) in x.keys()
+            ]
+        ) + sum(
+            [
+                y_dictionary[j, k][i, h].solution_value() * (self.bw_req[i][h] * self.link_energy(j,k))
+                for j, k in y_dictionary.keys()
+                for i, h in y_dictionary[j, k].keys()
+            ]
+        )
+        solution["Placement"] = sol_placement
+        solution["Profit"] = solver.Objective().Value()
+        solution["Carbon"] = sol_carbon
+        solution["Energy"] = sol_energy
+        solution["UnsatProps"] = "-"
+        solution["Infs"] = 0
+        solution["Time"] = self.initialization_time + solving_time
+         
+        return solution
+        
+        
+        with open(t.MODELS_FILE.format(name='model'), 'w') as f:
+            print(solver.ExportModelAsMpsFormat(fixed_format=False, obfuscated=False), file=f)
             
-            sol_energy = sum(
-                [
-                    x[i, j].solution_value() * self.energy[i][j]
-                    for i in range(len(self.only_vnfs))
-                    for j in range(len(self.nodes))
-                ]
-            ) + sum(
-                [
-                    y_dictionary[j, k][i, h].solution_value() * (self.bw_req[i][h] * self.link_energy(j,k))
-                    for j, k in y_dictionary.keys()
-                    for i, h in y_dictionary[j, k].keys()
-                ]
-            )
-            
-            solution["Placement"] = sol_placement
-            solution["Profit"] = solver.Objective().Value()
-            solution["Carbon"] = sol_carbon
-            solution["Energy"] = sol_energy
-            solution["UnsatProps"] = "-"
-            solution["Infs"] = 0
-            solution["Time"] = self.initialization_time + solving_time
-            
-            return solution
 
     def parse_placement(self, x):
         i = 0
@@ -279,7 +276,7 @@ class Milp:
             sol_placement += '("' + str(intent_id) + '", [ ' 
             for _ in range(len(chain)):
                 for j,n in enumerate(self.nodes):
-                    if x[i, j].solution_value():
+                    if (i,j) in x.keys() and x[i, j].solution_value():
                         sol_placement += (
                                 '"on(' + str(self.only_vnfs[i]) + ", " + str(self.vnfs_type[i]) + ", " + str(n) + ')",'
                             )
