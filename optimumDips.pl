@@ -5,29 +5,27 @@
 :- set_prolog_flag(last_call_optimisation, true).
 
 %% OPTIMUM SOLUTION %%
-optimumDips(Output) :-
+optiDips(BestSol) :-
     statistics(cputime, T1),
     findall(intent(StakeHolder, IntentId, NUsers, TId), intent(StakeHolder, IntentId, NUsers, TId), AllIntents),
-    findall((Prop, Cap), globalIntent(Prop, smaller, Cap, _), GlobProps),
-    optimalPsInfo(AllIntents, GlobProps, Output),
+    optimalPsInfo(AllIntents, BestSol),
     statistics(cputime, T2),
     Time is T2 - T1,
     write('CPU Time: '), writeln(Time).
 
-optimalPsInfo(AllIntents, GlobProps, BestSol) :-
-    findall(PsInfo, validPsInfo(AllIntents, GlobProps, PsInfo), Sols),
+optimalPsInfo(AllIntents, BestSol) :-
+    findall(PsInfo, validPsInfo(AllIntents, PsInfo), Sols),
     sort(1, @>=, Sols, [BestSol|_]).
 
-validPsInfo(IntentList, GlobProps, PsInfo) :-
+validPsInfo(IntentList, PsInfo) :-
     StartingPInfo = info(0, 0, 0, [], [], []),
-    validPsInfo(IntentList, GlobProps, StartingPInfo, PsInfo).
+    validPsInfo(IntentList, StartingPInfo, PsInfo).
 
-validPsInfo([Intent|Is], GlobProps, OldPsInfo, NewPsInfo) :-
+validPsInfo([Intent|Is], OldPsInfo, NewPsInfo) :-
     findall(PInfo, dips(Intent, OldPsInfo, PInfo), PInfos),
     empty(Intent, EmptyPInfo),
     AllPInfo = [EmptyPInfo|PInfos],
     member(ChoosenPInfo, AllPInfo),
-    checkGlobalProperties(GlobProps, OldPsInfo, ChoosenPInfo),
     mergePlacements(OldPsInfo, ChoosenPInfo, TmpPsInfo),
-    validPsInfo(Is, GlobProps, TmpPsInfo, NewPsInfo).
-validPsInfo([], _, PsInfo, PsInfo).
+    validPsInfo(Is, TmpPsInfo, NewPsInfo).
+validPsInfo([], PsInfo, PsInfo).

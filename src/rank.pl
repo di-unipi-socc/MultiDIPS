@@ -1,11 +1,11 @@
 %% INTENT RANKING %%
 
 % Rank mode choice
-rankIntent(RankMode, IntentList, OrderedIntentList) :-
+rankIntents(RankMode, IntentList, OrderedIntentList) :-
     RankMode = 'longest', longestChain(IntentList, [], OrderedIntentList).
-rankIntent(RankMode, IntentList, OrderedIntentList) :-
+rankIntents(RankMode, IntentList, OrderedIntentList) :-
     RankMode = 'hungriest', hungriestChain(IntentList, [], OrderedIntentList).
-rankIntent(RankMode, IntentList, OrderedIntentList) :-
+rankIntents(RankMode, IntentList, OrderedIntentList) :-
     RankMode = 'random', randomIntents(IntentList, OrderedIntentList).
 
 % Longest Chain first.
@@ -66,12 +66,6 @@ sortByAttributes([N|T], Ps, Min, Max, OldSortedNodes, SortedNodes) :-
 sortByAttributes([], _, _, _, OldSortedNodes, SortedNodes) :-
     sort(OldSortedNodes, TmpSortedNodes),
     maplist(extractElement, TmpSortedNodes, SortedNodes).
-
-nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
-    nodeEmissions(Srcs, TmpNodeEmissions),
-    emissions(Src, Emissions),
-    NodeEmissions is TmpNodeEmissions + Prob * Emissions.
-nodeEmissions([], 0).
 
 rank(Values, Min, Max, Rank) :-
     normalizedValues(Values, Min, Max, (NormUnitCost, NormEmissions, NormFreeHWScore)),

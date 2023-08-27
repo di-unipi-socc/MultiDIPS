@@ -10,7 +10,7 @@
 /* INFRASTRUCTURE DATA */
 
 % Global intent
-% globalIntent(Property, Bound, Value, Unit)
+% globalIntent(Property, Operator, Value, Unit)
 globalIntent(footprint, smaller, 0.615, kg).
 
 % changingProperty(Property, VF). 
@@ -43,11 +43,13 @@ price(edge, (0.030, 0.060, 0.00050)).
 price(cloud, (0.015, 0.030, 0.00025)).
 
 
-% node(Id, Type, (RamCap [GB], vCPUCap, StorageCap [GB]) ).      	
+% node(Id, Type, (RamCap [GB], vCPUCap, StorageCap [GB]) ). 
+    % totHW(Id, totHW)     	
     % pue(Id, Value).
-    % energyProfile(Id, Load (from 0 to 1), Energy (Kw/h) ).
+    % ramEnergyProfile(Id, Load (from 0 to 1), Energy (Kw/h) ).
+    % cpuEnergyProfile(Id, Load (from 0 to 1), Energy (Kw/h) ).
+    % storageEnergyProfile(Id, Load (from 0 to 1), Energy (Kw/h) ).
     % energySourceMix(Id, Sources).
-    % cost(Id, Cost(€/h for unit) ).
     % energyCost(Id, Cost(€/Kwh) ).
 
 node(gateway, edge, (4,3,200)).

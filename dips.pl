@@ -7,13 +7,6 @@ dips(intent(_, IntentId, NUsers, TargetId), OldPsInfo, PInfo) :-
     checkSoftProps(IntentId, P, UnsatProp),
     findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo).
 
-findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo) :-
-    calculateHWInfo(P, HWEnergy, HWCarbon, Profit),
-    calculateFootprintBW(AllocBW, BWEnergy, BWCarbon),
-    Carbon is HWCarbon + BWCarbon, Energy is HWEnergy + BWEnergy,
-    PInfo = info(Profit, Carbon, Energy, (IntentId, P), AllocBW, UnsatProp).
-
-
 %% ASSEMBLY %%
 chainForIntent(IntentId, TargetId, Chain) :-
     target(TargetId, ServiceChain), 
@@ -36,7 +29,8 @@ completedChain(_, [], Chain, Chain).
 dimensionedChain(Chain, NUsers, DimChain) :- 
     dimensionedChain(Chain, NUsers, [], DimChain).
 dimensionedChain([(F,A)|Zs], U, OldC, NewC) :- 
-    vnfXUser(F, D, (L, H), _), between(L, H, U), dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
+    vnfXUser(F, D, (L, H), _), between(L, H, U),
+    dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
 dimensionedChain([], _, Chain, Chain).
 
 
@@ -67,6 +61,21 @@ checkPartialP(IntentId, P, OldPsAllocBW, NewAllocBW, OldPsInfo) :-
     findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
     checkGlobalProperties(GlobProps, OldPsInfo, PInfo).
 
+%% PROPERTIES CHECK %%
+checkSoftProps(IntentId, P, UnsatProp) :-
+    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, soft, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
+    checkSoftProps(NonChangProp, IntentId, P, [], UnsatProp).
+checkSoftProps([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
+    checkProperty(IntentId, Prop, From, To, P, OldUnsatProp, TmpUnsatProp), 
+    checkSoftProps(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
+checkSoftProps([], _, _, UnsatProp, UnsatProp).
+
+%% PLACEMENT INFO %%
+findPInfo(IntentId, P, UnsatProp, AllocBW, PInfo) :-
+    calculateHWInfo(P, HWEnergy, HWCarbon, Profit),
+    calculateBWInfo(AllocBW, BWEnergy, BWCarbon),
+    Carbon is HWCarbon + BWCarbon, Energy is HWEnergy + BWEnergy,
+    PInfo = info(Profit, Carbon, Energy, (IntentId, P), AllocBW, UnsatProp).
 
 calculateHWInfo([on(F, D, N)|T], TotHWEnergy, TotHWCarbon, TotProfit):-
     calculateHWInfo(T, TmpHWEnergy, TmpHWCarbon, TmpProfit),
@@ -99,18 +108,9 @@ calculateProfit(on(F, D, N), HWEnergy, Profit) :-
     Profit is RamReq * RamPrice + CPUReq * CPUPrice + StorageReq * StoragePrice - HWEnergy * ECost.
 calculateProfit([], _, 0).
 
-calculateFootprintBW(AllocBW, BWEnergy, BWCarbon) :-
+calculateBWInfo(AllocBW, BWEnergy, BWCarbon) :-
     filterAllocBW(AllocBW, RealAllocBW),
     sumBW(RealAllocBW, BWValue),
     kWhPerMB(V), averageGCI(GCI),
     BWEnergy is BWValue * V,
     BWCarbon is BWEnergy * GCI.
-
-%% PROPERTIES CHECK %%
-checkSoftProps(IntentId, P, UnsatProp) :-
-    findall((Prop, From, To), (propertyExpectation(IntentId, Prop, _, soft, _, _, From, To), dif(Prop, bandwidth)), NonChangProp),
-    checkSoftProps(NonChangProp, IntentId, P, [], UnsatProp).
-checkSoftProps([(Prop, From, To)|Props], IntentId, P, OldUnsatProp, NewUnsatProp) :- 
-    checkProperty(IntentId, Prop, From, To, P, OldUnsatProp, TmpUnsatProp), 
-    checkSoftProps(Props, IntentId, P, TmpUnsatProp, NewUnsatProp).
-checkSoftProps([], _, _, UnsatProp, UnsatProp).

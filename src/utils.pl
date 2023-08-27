@@ -124,6 +124,12 @@ freeHWScore(N, Ps, FreeHWScore) :-
     singleFreeHW(AllocCPU, CPU, CPUFreeHW),
     singleFreeHW(AllocStor, Stor, StorFreeHW),
     FreeHWScore is 1/(1+(RamFreeHW + CPUFreeHW + StorFreeHW/100)).
+
+nodeEmissions([(Prob, Src)|Srcs], NodeEmissions) :-
+    nodeEmissions(Srcs, TmpNodeEmissions),
+    emissions(Src, Emissions),
+    NodeEmissions is TmpNodeEmissions + Prob * Emissions.
+nodeEmissions([], 0).
     
 singleFreeHW(AllocHW, HW, FreeHW) :-
     FreeHW is HW - AllocHW.
