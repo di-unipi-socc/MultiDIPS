@@ -5,17 +5,30 @@ from os.path import basename, exists
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import sim.data as t
+import data as t
 from tabulate import tabulate
 from scipy import stats
 import numpy as np
 
-'''TYPE_TO_HIDE = [
-    'Random_Profit',
-    'Random_Carbon',
-    'Random_Free HW',
-    'Random_Balanced',
-]'''
+TYPE_TO_HIDE = []
+TYPE_TO_HIDE = [
+    'hungriest_random',
+    'longest_random',
+    'random_profit',
+    'random_carbon',
+    'random_freeHW',
+    'random_balanced'
+]
+'''
+ORDER = ['MILP', 'hungriest_balanced', 'hungriest_profit', 'hungriest_carbon', 'hungriest_freeHW', 'hungriest_random',
+                         'longest_balanced', 'longest_profit', 'longest_carbon', 'longest_freeHW', 'longest_random', 'random_profit',
+                        'random_carbon', 'random_freeHW', 'random_balanced', 'random_random']
+                        '''
+ORDER = ['MILP', 'hungriest_balanced', 'hungriest_profit', 'hungriest_carbon', 'hungriest_freeHW', 'longest_profit',
+    'longest_carbon',
+    'longest_freeHW',
+    'longest_balanced',
+                'random_random']
 
 PALETTE = 'colorblind'
 TIME_YLIM = (10**-2, 10**3)
@@ -91,7 +104,7 @@ def intents_infrs_vs(df, field, infr_sizes, num_intents, heuristics=None, ylabel
 
 def intents_infrs_vs_v2(df, field, infr_sizes, heuristics=None, ylabel=None, limit='normal'):
     sns.reset_defaults()
-    sns.set(font_scale=1.5)
+    sns.set(font_scale=2)
     sns.set(rc={'figure.figsize': (10, 6)})
 
     for size_value in infr_sizes:
@@ -116,9 +129,7 @@ def intents_infrs_vs_v2(df, field, infr_sizes, heuristics=None, ylabel=None, lim
             y = field, 
             data = filtered_df, 
             hue = 'type',
-            hue_order = ['MILP', 'Hungriest_Balanced', 'Hungriest_Profit', 'Hungriest_Carbon', 'Hungriest_Free HW',
-                         'Longest_Balanced', 'Longest_Profit', 'Longest_Carbon', 'Longest_Free HW', 'Random_Profit',
-                        'Random_Carbon', 'Random_Free HW', 'Random_Balanced'],
+            hue_order = ORDER,
             errorbar = None,
             palette = PALETTE
         )
@@ -127,8 +138,8 @@ def intents_infrs_vs_v2(df, field, infr_sizes, heuristics=None, ylabel=None, lim
             plt.yscale('log')
             
         plt.ylabel(ylabel if ylabel else field)
-        plt.xlabel("Number of intents")
-        plt.legend(loc='best')
+        plt.xlabel("Numero di intenti")
+        plt.legend(loc='lower left', bbox_to_anchor=(0, 1), ncol=3)
 
         plt.savefig(t.PLOT_PATH.format(name=name), format=t.PLOT_FORMAT, dpi=t.PLOT_DPI, bbox_inches='tight')
         plt.close()
@@ -182,7 +193,7 @@ def size_vs(df, field, num_intents=None, type=None, ylabel=None):
     # set labels
     plt.xlabel('Infrastructure Size')
     plt.ylabel(ylabel if ylabel else field)
-    plt.legend(title='Num. of intents:', loc='best')
+    plt.legend(title='Num. of intents:', loc='lower left', bbox_to_anchor=(0, 1))
 
     # save plot
     name = '{}-{}'.format(type, field.lower())
@@ -296,14 +307,14 @@ if __name__ == '__main__':
     #size_vs(df=filtered_df, field='time', type='all_heuristics', ylabel='Time (s)')
     #size_vs(df=filtered_df, field='time', type='MILP', ylabel='Time (s)')
 
-    intents_infrs_vs_v2(df=filtered_df, field='profit', infr_sizes=infr_sizes, ylabel='Profit (€)', limit='normal')
-    intents_infrs_vs_v2(df=filtered_df, field='profit', infr_sizes=infr_sizes, ylabel='Profit (€)', limit='low')
+    intents_infrs_vs_v2(df=filtered_df, field='profit', infr_sizes=infr_sizes, ylabel='Profitto (€)', limit='normal')
+    intents_infrs_vs_v2(df=filtered_df, field='profit', infr_sizes=infr_sizes, ylabel='Profitto (€)', limit='low')
     
-    intents_infrs_vs_v2(df=filtered_df, field='time', infr_sizes=infr_sizes, ylabel='Time (s)', limit='normal')
-    intents_infrs_vs_v2(df=filtered_df, field='time', infr_sizes=infr_sizes, ylabel='Time (s)', limit='low')
+    intents_infrs_vs_v2(df=filtered_df, field='time', infr_sizes=infr_sizes, ylabel='Tempo (s)', limit='normal')
+    intents_infrs_vs_v2(df=filtered_df, field='time', infr_sizes=infr_sizes, ylabel='Tempo (s)', limit='low')
 
-    intents_infrs_vs_v2(df=filtered_df, field='carbon', infr_sizes=infr_sizes, ylabel='Carbon footprint (kg)', limit='normal')
-    intents_infrs_vs_v2(df=filtered_df, field='carbon', infr_sizes=infr_sizes, ylabel='Carbon footprint (kg)', limit='low')
+    intents_infrs_vs_v2(df=filtered_df, field='carbon', infr_sizes=infr_sizes, ylabel='Impronta di carbonio (kg)', limit='normal')
+    intents_infrs_vs_v2(df=filtered_df, field='carbon', infr_sizes=infr_sizes, ylabel='Impronta di carbonio (kg)', limit='low')
 
     '''
     with open(t.TXT_PATH.format(name='profit-mean'), 'w') as f:
