@@ -14,8 +14,8 @@ chainForIntent(IntentId, TargetId, Chain) :-
     findall((P,F), (changingProperty(P,F), propertyExpectation(IntentId, P, _, _, _)), Properties),
     completedChain(IntentId, Properties, LChain, Chain).
 
-layeredChain([F|Fs], [(F,A)|NewFs]) :- 
-    vnf(F, A, _), layeredChain(Fs, NewFs).
+layeredChain([F|Fs], [(F,L)|NewFs]) :- 
+    vnf(F, L, _), layeredChain(Fs, NewFs).
 layeredChain([], []).
 
 completedChain(IntentId, [(P,F)|Ps], Chain, NewChain) :- 
@@ -28,9 +28,9 @@ completedChain(_, [], Chain, Chain).
 %% PLACEMENT %%
 dimensionedChain(Chain, NUsers, DimChain) :- 
     dimensionedChain(Chain, NUsers, [], DimChain).
-dimensionedChain([(F,A)|Zs], U, OldC, NewC) :- 
-    vnfXUser(F, D, (L, H), _), between(L, H, U),
-    dimensionedChain(Zs, U, [(F, A, D)|OldC], NewC).
+dimensionedChain([(F,L)|Zs], NUsers, OldC, NewC) :- 
+    vnfXUser(F, D, (Lbound, Hbound), _), between(Lbound, Hbound, NUsers), 
+    dimensionedChain(Zs, NUsers, [(F, L, D)|OldC], NewC).
 dimensionedChain([], _, Chain, Chain).
 
 
@@ -58,7 +58,7 @@ checkPartialP(IntentId, P, OldPsAllocBW, NewAllocBW, OldPsInfo) :-
     checkLat(IntentId, P),
     checkBW(P, NewAllocBW, OldPsAllocBW),
     findPInfo(IntentId, P, [], NewAllocBW, PInfo), 
-    findall((Property, Cap), globalIntent(Property, smaller, Cap, _), GlobProps),
+    findall((Property, Cap), globalIntent(Property, _, Cap, _), GlobProps),
     checkGlobalProperties(GlobProps, OldPsInfo, PInfo).
 
 %% PROPERTIES CHECK %%
