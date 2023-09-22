@@ -89,6 +89,10 @@ class Milp:
 
         solver.SetTimeLimit(24 * 60 * 60 * 1000)    # 24 hours timeout
 
+        solver.SetSolverSpecificParametersAsString('Threads=4')
+        solver.SetSolverSpecificParametersAsString('NodefileStart=0.5')
+        solver.SetSolverSpecificParametersAsString('IgnoreNames=1')
+
         start_time = process_time()
   
         # variable: placement variable (if node j is compatible with VNF i)
@@ -262,6 +266,7 @@ class Milp:
         solution["Infs"] = 0
         solution["Time"] = self.initialization_time + solving_time
          
+        print(status)
         return solution
         
         
@@ -293,6 +298,8 @@ def main(intents_file, infrf_file):
     milp = Milp(intents_file, infrf_file)
     milp.initialization()
     solution = milp.solve()
+    solution.pop('Infs', None)
+    solution.pop('UnsatProps', None)
     print(solution)
 
 if __name__ == "__main__":

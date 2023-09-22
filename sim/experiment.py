@@ -14,7 +14,7 @@ from intents import Intents
 from pyswip import Prolog
 from tabulate import tabulate as tbl
 
-TIMEOUT = 172800 #seconds
+TIMEOUT = 86400 #seconds
 
 # --- UTILITY FUNCTIONS ---
 def get_new_prolog_instance(intents, infr):
@@ -103,11 +103,11 @@ class Result():
             
 
 class Experiment():
-    def __init__(self, infr: Infrastructure, intents: Intents, epochs: int = 100, timeout: int = TIMEOUT, variation_rate: float = 0.2, low: int = False):
+    def __init__(self, infr: Infrastructure, intents: Intents, variations: int = 100, timeout: int = TIMEOUT, variation_rate: float = 0.2, low: int = False):
         
         self.infr = infr
         self.intents = intents
-        self.epochs = epochs
+        self.variations = variations
         self.timeout = timeout
         self.variation_rate = variation_rate
         self.low = low
@@ -131,7 +131,7 @@ class Experiment():
             if self.low:
                 results["limit"] = "low"
             else:
-                results["limit"] = "normal"
+                results["limit"] = "high"
             df_to_file(results, file)
         else:
             print("No results to upload.")
@@ -143,7 +143,7 @@ class Experiment():
                 print(f"\tFailed at epoch {i+1}. (timeout)")
 
     def run(self):
-        for i in range(self.epochs):
+        for i in range(self.variations):
             
             p_milp = Process(name=f"MILP", target=self.milp, args=(i,))
             p_milp.start()
@@ -200,18 +200,18 @@ class Experiment():
 @click.argument("intents_size", type=int, nargs=1)
 @click.argument("infr_size", type=int, nargs=1)
 @click.argument('variation_rate', type=float, default=0.3)
-@click.option('--epochs', '-e', type=int, default=50, help="Number of epochs to run the experiment.")
+@click.option('--variations', '-v', type=int, default=50, help="Number of variations to run the experiment.")
 @click.option("--seed", "-s", type=int, default=None, help="Seed for the random number generator.")
 @click.option("--timeout", "-t", type=int, default=TIMEOUT, help="Timeout for each test.")
 @click.option("--low", "-l", type=bool, default=False, help="Flag for low global intent cap experiment.")
 
-def main(intents_size, infr_size, variation_rate, epochs, seed, timeout, low):
+def main(intents_size, infr_size, variation_rate, variations, seed, timeout, low):
     # Start an experiment with an infrastructure of infr_size nodes and intents_size number of intents.
     with TemporaryDirectory() as tmpdir:
         print(f"Temporary directory: {tmpdir}")
         # use tabulate to print the input args
         print(tbl([["Infrastructure Size", infr_size], ["Number of intent", intents_size], 
-                    ["Variation rate", variation_rate], ["Epochs", epochs],
+                    ["Variation rate", variation_rate], ["Variations", variations],
                     ["Timeout", timeout]], tablefmt="fancy_grid"))
 
         # generating/parsing intents and infrastructure files
@@ -241,7 +241,7 @@ def main(intents_size, infr_size, variation_rate, epochs, seed, timeout, low):
             copyfile(infr.file, infr_file)
 
         # run experiment
-        exp = Experiment(infr=infr, intents=intents, epochs=epochs, timeout=timeout, variation_rate=variation_rate, low=low)
+        exp = Experiment(infr=infr, intents=intents, variations=variations, timeout=timeout, variation_rate=variation_rate, low=low)
         exp.run()
         exp.upload()
         
