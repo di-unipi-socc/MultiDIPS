@@ -62,7 +62,7 @@ def intents_infrs_vs(
 ):
     sns.reset_defaults()
     sns.set(font_scale=1)
-    sns.set(rc={"figure.figsize": (11.7, 8.27)})
+    #sns.set(rc={"figure.figsize": (11.7, 8.27)})
 
     for num_intents_value in num_intents:
         for size_value in infr_sizes:
@@ -129,7 +129,7 @@ def intents_infrs_vs_v2(
 ):
     sns.reset_defaults()
     sns.set(font_scale=1)
-    sns.set(rc={"figure.figsize": (10, 6)})
+    #sns.set(rc={"figure.figsize": (10, 6)})
 
     for size_value in infr_sizes:
         filtered_df = df[(df["size"] == size_value)]
@@ -162,7 +162,7 @@ def intents_infrs_vs_v2(
             plt.yscale("log")
 
         plt.ylabel(ylabel if ylabel else field, fontsize=15)
-        plt.xlabel("Numero di intenti", fontsize=15)
+        plt.xlabel("Number of intents", fontsize=15)
         legend = plt.legend(labels = LABELS, loc="lower left", bbox_to_anchor=(0, 1), ncol=3, fontsize=13, frameon = True)
         frame = legend.get_frame()
         frame.set_color('white')
@@ -331,14 +331,14 @@ if __name__ == "__main__":
         df=filtered_df,
         field="profit",
         infr_sizes=infr_sizes,
-        ylabel="Profitto (€/h)",
+        ylabel="Profit (€/h)",
         limit="high",
     )
     intents_infrs_vs_v2(
         df=filtered_df,
         field="profit",
         infr_sizes=infr_sizes,
-        ylabel="Profitto (€/h)",
+        ylabel="Profit (€/h)",
         limit="low",
     )
 
@@ -346,14 +346,14 @@ if __name__ == "__main__":
         df=filtered_df,
         field="time",
         infr_sizes=infr_sizes,
-        ylabel="Tempo (s)",
+        ylabel="Time (s)",
         limit="high",
     )
     intents_infrs_vs_v2(
         df=filtered_df,
         field="time",
         infr_sizes=infr_sizes,
-        ylabel="Tempo (s)",
+        ylabel="Time (s)",
         limit="low",
     )
 
@@ -361,13 +361,13 @@ if __name__ == "__main__":
         df=filtered_df,
         field="carbon",
         infr_sizes=infr_sizes,
-        ylabel="Impronta di carbonio (kg/h)",
+        ylabel="Carbon footprint (kg/h)",
         limit="high",
     )
     intents_infrs_vs_v2(
         df=filtered_df,
         field="carbon",
         infr_sizes=infr_sizes,
-        ylabel="Impronta di carbonio (kg/h)",
+        ylabel="Carbon footprint (kg/h)",
         limit="low",
     )
